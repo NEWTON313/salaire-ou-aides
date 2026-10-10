@@ -93,6 +93,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .ck-btns button{font:inherit;font-weight:700;min-width:110px;padding:8px 14px;border-radius:7px;cursor:pointer;border:1px solid var(--work);background:var(--surface);color:var(--work)}
 .ck-btns #ck-accept{background:var(--work);color:var(--surface)}
 .linkbtn{font:inherit;color:var(--work);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+.crumbs a{font-weight:600;text-decoration:none}
+.crumbs a:hover{text-decoration:underline}
+#page-detail section{margin-top:22px}
 .tab{font:inherit;font-size:.92rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--work);border-color:var(--work);color:var(--surface)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0;display:flex;flex-direction:column;gap:14px}
@@ -136,6 +139,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
 </style>
 
 <div class="wrap">
+ <div id="page-home">
   <header>
     <p class="eyebrow">Barèmes 2026 · 13 foyers fictifs</p>
     <h1>Ce que rapporte vraiment le travail</h1>
@@ -144,7 +148,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     <div class="facts" id="facts"></div>
   </header>
 
-  <section>
+  <section id="comparaison">
     <h2>Revenu disponible et reste à vivre par mois</h2>
     <p class="muted"><b>Revenu disponible</b> : salaires et aides (aide au logement comprise), moins l'impôt, la santé et les frais du travail. <b>Reste à vivre</b> : ce qui reste ensuite, une fois payés le loyer et les dépenses courantes (énergie, téléphone, internet, assurances), pour manger, s'habiller, se déplacer et les loisirs. Foyers classés du plus petit au plus grand écart entre la vie d'aides et la vie salariée. Cliquez sur un foyer pour voir le détail.</p>
     <div class="legend"><span><i style="background:var(--aid)"></i>Sans emploi (vit des aides)</span><span><i style="background:var(--work)"></i>Salarié (le salaire retenu est indiqué pour chaque foyer)</span>
@@ -181,8 +185,13 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     <div class="rows" id="m-result" hidden></div>
   </section>
 
+ </div>
+
+ <div id="page-detail" hidden>
+  <nav class="crumbs"><a href="#comparaison" id="back-home">← Retour à la comparaison</a></nav>
   <section id="detail-sec">
     <h2>Un foyer en détail</h2>
+    <p class="muted">Choisissez un foyer, puis un salaire : le tableau montre poste par poste ce qui change entre la vie sans emploi et la vie salariée.</p>
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="panel">
       <p class="story" id="story"></p>
@@ -230,7 +239,10 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
       </details>
     </div>
   </section>
+  <nav class="crumbs"><a href="#comparaison">← Retour à la comparaison</a></nav>
+ </div>
 
+ <div id="page-more">
   <section>
     <h2>Pour aller plus loin</h2>
     <details>
@@ -305,6 +317,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
       </div>
     </details>
   </section>
+ </div>
 </div>
 
 <div class="cookie" id="cookie-banner" role="dialog" aria-labelledby="ck-title" hidden>
@@ -686,7 +699,7 @@ function renderTop(){
       </div>`;
     if(p.refS) b.style.background="var(--soft)";
     if(p.custom) b.style.boxShadow="inset 4px 0 0 var(--work)";
-    b.onclick=()=>{ select(p.id); document.getElementById("detail-sec").scrollIntoView({behavior:"smooth"}); };
+    b.onclick=()=>goFoyer(p.id);
     rows.appendChild(b);
     if(p.custom){ const c=b.cloneNode(true); c.onclick=b.onclick; c.style.boxShadow="none"; mres.appendChild(c); mres.hidden=false; }
   });
@@ -729,7 +742,7 @@ document.getElementById("m-go").addEventListener("click",()=>{ addMonProfil(read
 function renderTabs(){
   const t=document.getElementById("tabs"); t.innerHTML="";
   PERSONAS.forEach(p=>{ const b=document.createElement("button"); b.className="tab"; b.type="button"; b.role="tab";
-    b.textContent=p.nom; b.setAttribute("aria-selected",p===cur); b.onclick=()=>select(p.id); t.appendChild(b); });
+    b.textContent=p.nom; b.setAttribute("aria-selected",p===cur); b.onclick=()=>goFoyer(p.id); t.appendChild(b); });
 }
 const PRESETS=[["Sans emploi",0],["Mi-temps",0.5],["SMIC",1],["Salaire médian","med"],["2 SMIC",2]];
 function renderPresets(S){
@@ -912,7 +925,21 @@ const gaEvent=(name,params)=>{ if(window.gtag && window.__gaLoaded) gtag("event"
 
 renderAides(); renderValid();
 try{ const saved=JSON.parse(localStorage.getItem("monProfil")||"null"); if(saved&&saved.id==="perso"){ PERSONAS.unshift(saved); scheduleOF(saved); } }catch(e){}
-renderTop(); select(PERSONAS.find(p=>p.id==="camille").id);
+// Navigation entre l'accueil et la page « Un foyer en détail » (#foyer-<id>)
+function goFoyer(id){ location.hash = "foyer-"+id; }
+function route(){
+  const h = location.hash.slice(1), detail = h.startsWith("foyer-") && PERSONAS.some(p=>p.id===h.slice(6));
+  document.getElementById("page-home").hidden = detail;
+  document.getElementById("page-more").hidden = detail;
+  document.getElementById("page-detail").hidden = !detail;
+  if(detail){ if(!cur || cur.id!==h.slice(6)) select(h.slice(6)); window.scrollTo(0,0);
+    document.title = `${cur.nom} : en détail · Ce que rapporte vraiment le travail`; }
+  else { document.title = "Ce que rapporte vraiment le travail"; const t=document.getElementById(h); if(t) setTimeout(()=>t.scrollIntoView(),0); }
+  gaEvent("page_view",{page_title:document.title, page_location:location.href});
+}
+window.addEventListener("hashchange", route);
+
+renderTop(); select(PERSONAS.find(p=>p.id==="camille").id); route();
 </script>
 
 </body>
