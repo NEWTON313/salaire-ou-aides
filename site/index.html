@@ -67,7 +67,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .row{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
 .row:first-child{border-top:0}
 .row:hover{background:var(--soft)}
-@media (max-width:700px){.row{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:14px}.row .name{grid-column:1/-1}}
 .row .name b{font-family:var(--f-display);font-stretch:88%;font-size:1.08rem}
 .row .name>span{display:block;font-size:.85rem;color:var(--muted)}
 .bars{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -101,6 +101,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .ck-btns button{font:inherit;font-weight:700;min-width:110px;padding:8px 14px;border-radius:7px;cursor:pointer;border:1px solid var(--work);background:var(--surface);color:var(--work)}
 .ck-btns #ck-accept{background:var(--work);color:var(--surface)}
 .linkbtn{font:inherit;color:var(--work);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+@media (max-width:600px){
+  .tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+  .tab{flex:0 0 auto}
+  .tbl{font-size:.82rem}
+  .tbl th,.tbl td{padding:5px 4px}
+  .tbl td.r,.tbl th.r{font-size:.78rem}
+  #chart text{font-size:15px}
+  #detail thead th.r{white-space:normal;letter-spacing:.02em}
+  #detail th,#detail td{padding:5px 4px}
+  #detail td.r{font-size:.78rem}
+  .panel{padding:14px}
+  .story{font-size:1.02rem}
+}
 .crumbs a{font-weight:600;text-decoration:none}
 .crumbs a:hover{text-decoration:underline}
 #page-detail section{margin-top:22px}
@@ -752,6 +765,7 @@ function renderTabs(){
   const t=document.getElementById("tabs"); t.innerHTML="";
   PERSONAS.forEach(p=>{ const b=document.createElement("button"); b.className="tab"; b.type="button"; b.role="tab";
     b.textContent=p.nom; b.setAttribute("aria-selected",p===cur); b.onclick=()=>goFoyer(p.id); t.appendChild(b); });
+  const act=t.querySelector('[aria-selected="true"]'); if(act && t.scrollWidth>t.clientWidth) t.scrollLeft = act.offsetLeft - (t.clientWidth-act.offsetWidth)/2;
 }
 const PRESETS=[["Sans emploi",0],["Mi-temps",0.5],["SMIC",1],["Salaire médian","med"],["2 SMIC",2]];
 function renderPresets(S){
@@ -832,7 +846,7 @@ function update(){
 }
 
 function drawChart(m,Ssel){
-  const svg=document.getElementById("chart"), W=460,H=300,L=48,R=10,T=12,B=40;
+  const svg=document.getElementById("chart"), W=460,H=300,mob=innerWidth<600,L=mob?66:48,R=10,T=12,B=mob?50:40;
   const F1=fullS(cur), max=2.5*F1, pts=[];
   for(let S=0;S<=max;S+=25) pts.push(simulate(cur,S));
   const base=m.base.rd;
