@@ -107,6 +107,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .crumbs a{font-weight:600;text-decoration:none}
 .crumbs a:hover{text-decoration:underline}
 #page-detail section{margin-top:22px}
+.share{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.share-url{flex:1 1 260px;min-width:0;font:inherit;font-size:.85rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
 .tab{font:inherit;font-size:.92rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--work);border-color:var(--work);color:var(--surface)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0;display:flex;flex-direction:column;gap:14px}
@@ -194,6 +196,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     </form>
     <div class="legend" id="m-legend" hidden><span><i style="background:var(--aid)"></i>Sans emploi (vit des aides)</span><span><i style="background:var(--work)"></i>Salarié</span><span>Cliquez sur la ligne pour le détail poste par poste.</span></div>
     <div class="rows" id="m-result" hidden></div>
+    <div class="share" data-share hidden><button type="button" class="cta" data-share-btn>Partager ce profil</button><span class="share-msg muted" data-share-msg></span><input type="text" class="share-url" data-share-url readonly hidden aria-label="Lien de partage du profil"></div>
   </section>
 
  </div>
@@ -207,6 +210,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     <div class="panel">
       <p class="story" id="story"></p>
       <p id="src" class="eyebrow"></p>
+      <div class="share" data-share hidden><button type="button" class="cta" data-share-btn>Partager ce profil</button><span class="share-msg muted" data-share-msg></span><input type="text" class="share-url" data-share-url readonly hidden aria-label="Lien de partage du profil"></div>
       <div class="presets" id="presets"></div>
       <div class="slider">
         <label for="sal" class="eyebrow" id="sal-lab">Salaire brut</label>
@@ -714,6 +718,7 @@ function renderTop(){
     b.onclick=()=>goFoyer(p.id);
     rows.appendChild(b);
     if(p.custom){ const c=b.cloneNode(true); c.onclick=b.onclick; c.style.boxShadow="none"; mres.appendChild(c); mres.hidden=false; }
+    document.querySelector("#mon-profil [data-share]").hidden = !(LIVE_OF && all.some(x=>x.p.custom));
   });
 }
 
@@ -736,10 +741,10 @@ function readMonProfil(){
     : `${who}${enf}, ${age} ans, loyer de ${eur(h.loyer)} (${ZONE_LAB[h.zone]}). Comparaison entre aucun revenu d'activité et ${h.ae?"un chiffre d'affaires":"un salaire"} de ${eur(sal)} brut${h.compareCouple?`, avec ${eur(s2)} brut pour le conjoint`:""}.`;
   return h;
 }
-function addMonProfil(h, go){
+function addMonProfil(h, go, save=true){
   const i=PERSONAS.findIndex(p=>p.id==="perso"); if(i>=0) PERSONAS.splice(i,1);
   PERSONAS.unshift(h);
-  try{ localStorage.setItem("monProfil", JSON.stringify(h)); }catch(e){}
+  if(save){ try{ localStorage.setItem("monProfil", JSON.stringify(h)); }catch(e){} }
   renderTop(); select("perso"); scheduleOF(h);
   if(go) document.getElementById("m-result").scrollIntoView({behavior:"smooth",block:"center"});
 }
@@ -808,6 +813,7 @@ function update(){
   if(cur.custom) txt = txt.replace("Mon profil a un","vous avez un").replace("Mon profil aurait","vous auriez").replace("lui rapporte","vous rapporte").replace("le revenu disponible de Mon profil serait","votre revenu disponible serait").replace("il resterait à Mon profil","il vous resterait").replace("elle garde","vous gardez").replace("lui rapportent","vous rapportent");
   document.getElementById("story").innerHTML=`<span class="who">${cur.desc}</span>${txt}`;
   const st=OFSTATE[cur.id];
+  document.querySelector("#detail-sec [data-share]").hidden = !(LIVE_OF && cur.custom);
   document.getElementById("src").innerHTML = (LIVE_OF && st==="loading") ? `<span class="muted">● Calcul OpenFisca en cours…</span>` : (LIVE_OF && st==="error" && !(x.of||b.of)) ? `<span class="k-aid">● OpenFisca ne répond pas : modèle approché, écart possible de quelques dizaines d'euros</span>` : (x.of||b.of) ? `<span class="k-gain">● Aides et impôt calculés avec OpenFisca, le moteur officiel</span>` : `<span class="k-aid">● Modèle approché${cur.custom?" (profil personnalisé)":cur.edited?" (foyer modifié)":""} : écart possible de quelques dizaines d'euros</span>`;
   if(!R) drawChart(m,S);
 
@@ -940,7 +946,38 @@ renderAides(); renderValid();
 try{ const saved=JSON.parse(localStorage.getItem("monProfil")||"null"); if(saved&&saved.id==="perso"){ PERSONAS.unshift(saved); scheduleOF(saved); } }catch(e){}
 // Navigation entre l'accueil et la page « Un foyer en détail » (#foyer-<id>)
 function goFoyer(id){ location.hash = "foyer-"+id; }
+// Partage d'un profil personnalisé par lien
+const SITU_OK=["","asf","aah","ae","retraite"], MODE_OK=["tc","vp","va","pied"];
+function situOf(h){ return h.compareRetraite?"retraite":h.ae?"ae":h.aah?"aah":h.asf?"asf":""; }
+function encodeProfil(h){ return [h.adults,h.age,h.kids.join("."),h.zone,Math.round(h.loyer),h.mode,Math.round(h.km||0),Math.round(h.garde||0),Math.round(h.refS||0),Math.round(h.s2||0),situOf(h)||"x",Math.round(h.pensionMed||0)].join("_"); }
+function decodeProfil(str){
+  const a=str.split("_"); if(a.length!==12) return false;
+  const n=(v,min,max,d)=>{ const x=+v; return isNaN(x)?d:Math.min(max,Math.max(min,Math.round(x))); };
+  const set=(id,v)=>document.getElementById("m-"+id).value=v;
+  set("adults", a[0]==="2"?"2":"1"); set("age", n(a[1],18,99,35));
+  set("kids", a[2].split(".").filter(Boolean).map(k=>n(k,0,24,0)).join(", "));
+  set("zone", ["1","2","3"].includes(a[3])?a[3]:"2"); set("loyer", n(a[4],0,5000,550));
+  set("mode", MODE_OK.includes(a[5])?a[5]:"vp"); set("km", n(a[6],0,300,10)); set("garde", n(a[7],0,5000,0));
+  set("sal", n(a[8],0,30000,1867)); set("s2", n(a[9],0,30000,0));
+  const si=a[10]==="x"?"":a[10]; set("situ", SITU_OK.includes(si)?si:""); set("pension", n(a[11],0,10000,1400));
+  syncMform(); return true;
+}
+async function shareProfil(bar){
+  const h=PERSONAS.find(p=>p.id==="perso"); if(!h) return;
+  const url=location.origin+location.pathname+"#profil-"+encodeProfil(h), msg=bar.querySelector("[data-share-msg]"), inp=bar.querySelector("[data-share-url]");
+  gaEvent("profil_partage");
+  if(navigator.share){ try{ await navigator.share({title:"Ma simulation · Ce que rapporte vraiment le travail", text:"Voici ce que rapporte vraiment le travail dans ma situation :", url}); return; }catch(e){ if(e.name==="AbortError") return; } }
+  try{ await navigator.clipboard.writeText(url); msg.textContent="Lien copié ✓ : collez-le où vous voulez."; inp.hidden=true; }
+  catch(e){ inp.value=url; inp.hidden=false; inp.focus(); inp.select(); msg.textContent="Copiez ce lien :"; }
+}
+document.querySelectorAll("[data-share-btn]").forEach(b=>b.addEventListener("click",()=>shareProfil(b.closest("[data-share]"))));
+
 function route(){
+  const raw = location.hash.slice(1);
+  if(raw.startsWith("profil-")){   // lien partagé : recrée le profil sans écraser celui du visiteur
+    if(decodeProfil(raw.slice(7))){ addMonProfil(readMonProfil(), false, false); history.replaceState(null,"","#foyer-perso"); }
+    else history.replaceState(null,"",location.pathname);
+  }
   const h = location.hash.slice(1), detail = h.startsWith("foyer-") && PERSONAS.some(p=>p.id===h.slice(6));
   document.getElementById("page-home").hidden = detail;
   document.getElementById("page-more").hidden = detail;
