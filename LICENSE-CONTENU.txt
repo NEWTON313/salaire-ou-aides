@@ -1,0 +1,21 @@
+Licence des contenus — salaire-ou-aides.fr
+
+Les textes, tableaux, graphiques et explications publiés sur salaire-ou-aides.fr
+sont mis à disposition selon les termes de la licence
+Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+Vous êtes libre de :
+- partager : copier et redistribuer ces contenus sur tout support et sous tout format ;
+- adapter : les remixer, les transformer et créer à partir d'eux,
+pour toute utilisation, y compris commerciale.
+
+À condition de :
+- créditer la source (« salaire-ou-aides.fr »), indiquer si des modifications
+  ont été faites et fournir un lien vers la licence.
+
+Résumé : https://creativecommons.org/licenses/by/4.0/deed.fr
+Texte juridique complet : https://creativecommons.org/licenses/by/4.0/legalcode.fr
+
+Le code source du site est distribué séparément sous licence MIT (fichier LICENSE).
+Les barèmes et données publiques cités (CAF, DREES, OpenFisca, Légifrance…)
+restent soumis aux conditions de leurs producteurs respectifs.

@@ -1,0 +1,9 @@
+# Secrets et configuration locale
+.env*
+.vercel/
+**/.vercel/
+
+# Fichiers locaux
+.claude/
+__pycache__/
+*.pyc

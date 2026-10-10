@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://salaire-ou-aides.fr/sitemap.xml

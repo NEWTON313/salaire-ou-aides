@@ -1,0 +1,4 @@
+.env*
+build_site.py
+README.md
+.vercel

@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="canonical" href="https://salaire-ou-aides.fr/">
+<meta name="description" content="Simulateur pédagogique : revenu disponible et reste à vivre sans emploi ou en travaillant, pour des foyers types et votre propre profil. Barèmes 2026, calculs OpenFisca.">
+<style>:root{color-scheme:light dark}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Ce que rapporte vraiment le travail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une réponse, une comparaison en barres, un foyer en détail, puis annexes repliées */
+:root{
+  --paper:#f3f5f9; --surface:#ffffff; --ink:#161e36; --muted:#56617c; --line:#d8deea;
+  --work:#2547a6; --aid:#c27510; --loss:#b03636; --gain:#1d7650; --soft:#e9eef8;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0e1321; --surface:#161d30; --ink:#e6eaf4; --muted:#98a3bd; --line:#29324d;
+  --work:#86a2ff; --aid:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e1321; --surface:#161d30; --ink:#e6eaf4; --muted:#98a3bd; --line:#29324d;
+  --work:#86a2ff; --aid:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 64px}
+h1,h2,h3{font-family:var(--f-display);font-stretch:85%;text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800}
+h2{font-size:1.6rem;font-weight:750}
+h3{font-size:1.1rem;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+section{margin-top:52px;display:flex;flex-direction:column;gap:14px}
+.k-work{color:var(--work)} .k-aid{color:var(--aid)} .k-gain{color:var(--gain)} .k-loss{color:var(--loss)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+a{color:var(--work)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--work);outline-offset:2px}
+
+/* Réponse */
+.warn{max-width:70ch;margin-top:14px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.92rem;color:var(--muted)}
+.warn b{color:var(--ink)}
+.answer{font-family:var(--f-display);font-stretch:90%;font-size:clamp(1.3rem,3vw,1.75rem);font-weight:600;line-height:1.25;max-width:30ch;margin-top:14px}
+.answer b{color:var(--work)}
+.answer .ref{display:block;margin-top:12px;font-family:var(--f-body);font-size:1.02rem;font-weight:400;line-height:1.45;color:var(--muted);max-width:60ch}
+.answer .ref b{color:var(--ink)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:24px}
+@media (max-width:760px){.facts{grid-template-columns:minmax(0,1fr)}}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.fact .big{font-family:var(--f-display);font-stretch:85%;font-size:2.3rem;font-weight:800;line-height:1}
+.fact p{font-size:.95rem;color:var(--muted)}
+.coins{display:flex;gap:4px;margin:4px 0}
+.coins i{width:18px;height:18px;border-radius:50%;border:2px solid var(--gain)}
+.coins i.kept{background:var(--gain)}
+.coins i.lost{border-color:var(--line);background:var(--soft)}
+
+/* Comparaison */
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:.9rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:var(--soft)}
+@media (max-width:700px){.row{grid-template-columns:minmax(0,1fr)}}
+.row .name b{font-family:var(--f-display);font-stretch:88%;font-size:1.08rem}
+.row .name span{display:block;font-size:.85rem;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:5px;min-width:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.9rem;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.opts label{display:flex;align-items:center;gap:6px}
+.opts select{font:inherit;font-size:.88rem;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
+.glab{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.row .name span.cmp{font-size:.78rem;margin-top:2px}
+.bar{display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums}
+.bar span{display:block;height:14px;border-radius:3px;min-width:2px}
+.res{text-align:right}
+@media (max-width:700px){.res{text-align:left}}
+.res .g{font-family:var(--f-mono);font-size:1.05rem;font-weight:500}
+.res small{display:block;color:var(--muted);font-size:.85rem}
+
+/* Détail */
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.cta{font:inherit;font-weight:700;padding:9px 18px;border-radius:7px;border:0;background:var(--work);color:var(--surface);cursor:pointer}
+.tab{font:inherit;font-size:.92rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--work);border-color:var(--work);color:var(--surface)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.story{font-size:1.12rem;max-width:62ch}
+.story .who{color:var(--muted);font-size:.98rem;display:block;margin-bottom:6px}
+.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.presets button{font:inherit;font-size:.88rem;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.presets button.on{border-color:var(--work);color:var(--work);font-weight:600}
+.slider{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.slider input{flex:1 1 240px}
+.slider output{font-family:var(--f-mono);font-size:.9rem}
+.chartbox{overflow-x:auto}
+svg text{font-family:var(--f-mono);font-size:11px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:760px){.split{grid-template-columns:minmax(0,1fr)}}
+.tbl{width:100%;border-collapse:collapse;font-size:.93rem}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.tbl td.r,.tbl th.r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl tr.grp td{font-weight:700;padding-top:14px;border-bottom:none;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tbl tr.tot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;font-size:1rem}
+.scroll{overflow-x:auto}
+
+/* Replis */
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details>summary{cursor:pointer;padding:14px 18px;font-family:var(--f-display);font-stretch:88%;font-weight:700;font-size:1.1rem;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+details[open]>summary::after{content:"−"}
+details>.inner{padding:0 18px 18px;display:flex;flex-direction:column;gap:12px}
+details.inset{background:var(--paper)}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:.82rem;color:var(--muted)}
+.form label.chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:.9rem;grid-column:1/-1}
+.form input[type=number],.form input[type=text],.form select{font:inherit;font-size:.93rem;padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);width:100%;min-width:0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.cols div h3{margin-bottom:4px}
+.cols div p{font-size:.94rem;color:var(--muted)}
+ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0}
+.yes{color:var(--gain);font-weight:600}.no{color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Barèmes 2026 · 13 foyers fictifs</p>
+    <h1>Ce que rapporte vraiment le travail</h1>
+    <p class="warn"><b>Outil pédagogique, pas un calcul de droits.</b> Les foyers sont fictifs et les montants sont calculés avec les barèmes d'octobre 2026, en grande partie avec OpenFisca, le moteur de calcul public. La comparaison suppose que toutes les aides sont demandées et que l'emploi est stable, ce qui n'est pas toujours le cas (options plus bas). Pour connaître vos droits réels : <a href="https://www.mesdroitssociaux.gouv.fr" target="_blank" rel="noopener">mesdroitssociaux.gouv.fr</a>.</p>
+    <p class="answer" id="answer"></p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section>
+    <h2>Revenu disponible et reste à vivre par mois</h2>
+    <p class="muted"><b>Revenu disponible</b> : salaires et aides (aide au logement comprise), moins l'impôt, la santé et les frais du travail. <b>Reste à vivre</b> : ce qui reste ensuite, une fois payés le loyer et les dépenses courantes (énergie, téléphone, internet, assurances), pour manger, s'habiller, se déplacer et les loisirs. Foyers classés du plus petit au plus grand écart entre la vie d'aides et la vie salariée. Cliquez sur un foyer pour voir le détail.</p>
+    <div class="legend"><span><i style="background:var(--aid)"></i>Sans emploi (vit des aides)</span><span><i style="background:var(--work)"></i>Salarié (le salaire retenu est indiqué pour chaque foyer)</span>
+      </div>
+    <div class="opts">
+      <label><input type="checkbox" id="opt-alim" checked> Compter l'aide alimentaire</label>
+      <label><input type="checkbox" id="opt-nr"> Toutes les aides ne sont pas demandées (non-recours moyen)</label>
+      <label>Emploi <select id="opt-mois"><option value="12">stable toute l'année</option><option value="9">précaire : 9 mois par an</option><option value="6">précaire : 6 mois par an</option><option value="3">précaire : 3 mois par an</option></select></label>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section id="mon-profil">
+    <h2>Créer mon profil</h2>
+    <p class="muted">Décrivez votre foyer en quelques réponses : la page compare votre situation sans emploi et avec le salaire de votre choix. Rien n'est envoyé ni enregistré ailleurs que dans votre navigateur.</p>
+    <form class="panel" id="mform">
+      <div class="form">
+        <label>Vous vivez<select id="m-adults"><option value="1">seul</option><option value="2">en couple</option></select></label>
+        <label>Votre âge<input type="number" id="m-age" min="18" max="90" value="35"></label>
+        <label>Âges des enfants à charge<input type="text" id="m-kids" placeholder="ex. 4, 9 (vide si aucun)"></label>
+        <label>Où habitez-vous ?<select id="m-zone"><option value="1">Paris et petite couronne</option><option value="2" selected>Grande ville</option><option value="3">Petite ville, rural</option></select></label>
+        <label>Loyer hors charges (€/mois)<input type="number" id="m-loyer" min="0" step="10" value="550"></label>
+        <label>Pour aller travailler<select id="m-mode"><option value="tc">Transports en commun</option><option value="vp" selected>Ma voiture</option><option value="va">Une voiture à acheter</option><option value="pied">À pied ou à vélo</option></select></label>
+        <label>Distance domicile-travail, aller (km)<input type="number" id="m-km" min="0" step="1" value="10"></label>
+        <label>Garde d'enfants si vous travaillez (€/mois)<input type="number" id="m-garde" min="0" step="10" value="0"></label>
+        <label>Salaire brut envisagé (€/mois)<input type="number" id="m-sal" min="0" step="10" value="1867"></label>
+        <label id="m-s2-lab" hidden>Salaire brut du conjoint (€/mois, 0 s'il ne travaille pas)<input type="number" id="m-s2" min="0" step="10" value="0"></label>
+        <label>Situation particulière<select id="m-situ"><option value="">Aucune</option><option value="asf">Parent seul, sans pension alimentaire</option><option value="aah">Handicap reconnu (AAH)</option><option value="ae">Auto-entrepreneur (le salaire devient un chiffre d'affaires)</option><option value="retraite">Retraité (comparer sans carrière et avec ma retraite)</option></select></label>
+        <label id="m-pension-lab" hidden>Retraite nette (€/mois)<input type="number" id="m-pension" min="0" step="10" value="1400"></label>
+      </div>
+      <div><button type="button" class="cta" id="m-go">Voir ma comparaison</button></div>
+    </form>
+    <div class="legend" id="m-legend" hidden><span><i style="background:var(--aid)"></i>Sans emploi (vit des aides)</span><span><i style="background:var(--work)"></i>Salarié</span><span>Cliquez sur la ligne pour le détail poste par poste.</span></div>
+    <div class="rows" id="m-result" hidden></div>
+  </section>
+
+  <section id="detail-sec">
+    <h2>Un foyer en détail</h2>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="panel">
+      <p class="story" id="story"></p>
+      <p id="src" class="eyebrow"></p>
+      <div class="presets" id="presets"></div>
+      <div class="slider">
+        <label for="sal" class="eyebrow" id="sal-lab">Salaire brut</label>
+        <input type="range" id="sal" min="0" max="4670" step="10" value="1867">
+        <output id="salout"></output>
+      </div>
+      <div class="split">
+        <div class="chartbox"><svg id="chart" viewBox="0 0 460 300" width="100%" role="img" aria-label="Argent restant selon le salaire"></svg>
+          <div class="legend" style="font-size:.82rem"><span><i style="background:var(--aid)"></i>Sans emploi</span><span><i style="background:var(--work)"></i>En travaillant</span></div></div>
+        <div class="scroll"><table class="tbl" id="detail"></table></div>
+      </div>
+      <details class="inset">
+        <summary>Modifier la situation de ce foyer</summary>
+        <div class="inner">
+          <div class="form" id="form">
+            <label>Adultes<select id="f-adults"><option value="1">1 (seul)</option><option value="2">2 (couple)</option></select></label>
+            <label>Âge<input type="number" id="f-age" min="18" max="66"></label>
+            <label>Âges des enfants<input type="text" id="f-kids" placeholder="ex. 4, 9"></label>
+            <label>Zone<select id="f-zone"><option value="1">Île-de-France dense</option><option value="2">Grande ville</option><option value="3">Petite ville, rural</option></select></label>
+            <label>Loyer (€/mois)<input type="number" id="f-loyer" min="0" step="10"></label>
+            <label>Dépenses courantes : énergie, téléphone, assurances, crédit (€/mois)<input type="number" id="f-courantes" min="0" step="10"></label>
+            <label>Alimentation, budget minimal (€/mois)<input type="number" id="f-alimBudget" min="0" step="10"></label>
+            <label>Moyen de transport<select id="f-mode"><option value="tc">Transports en commun</option><option value="vp">Voiture déjà possédée (0,25 €/km)</option><option value="va">Voiture achetée pour travailler (0,61 €/km)</option><option value="pied">À pied ou à vélo</option></select></label>
+            <label>Distance domicile-travail, aller (km)<input type="number" id="f-km" min="0" step="1"></label>
+            <label>Abonnement transports, prix plein (€/mois)<input type="number" id="f-abo" min="0" step="1"></label>
+            <label>Repas au travail (€/mois)<input type="number" id="f-repas" min="0" step="5"></label>
+            <label>Garde d'enfants (€/mois)<input type="number" id="f-garde" min="0" step="5"></label>
+            <label>Réductions locales : transport, cantine (€/mois)<input type="number" id="f-tarifs" min="0" step="5"></label>
+            <label>Salaire brut du conjoint (€/mois)<input type="number" id="f-s2" min="0" step="50"></label>
+            <label>Pension de retraite nette (€/mois)<input type="number" id="f-pension" min="0" step="10"></label>
+            <label class="chk"><input type="checkbox" id="f-majore"> Parent seul avec un enfant de moins de 3 ans (RSA majoré)</label>
+            <label class="chk"><input type="checkbox" id="f-asf"> Parent seul qui ne reçoit pas de pension alimentaire</label>
+            <label class="chk"><input type="checkbox" id="f-cej"> Jeune en Contrat d'engagement jeune</label>
+            <label class="chk"><input type="checkbox" id="f-aah"> Handicap reconnu, reçoit l'AAH</label>
+            <label class="chk"><input type="checkbox" id="f-ald"> Maladie chronique (soins fréquents)</label>
+            <label class="chk"><input type="checkbox" id="f-ae"> Auto-entrepreneur (le curseur devient le chiffre d'affaires)</label>
+            <label>Activité (auto-entrepreneur)<select id="f-activite"><option value="services">Services : 21,3 % de cotisations</option><option value="vente">Vente : 12,4 % de cotisations</option><option value="liberal">Libéral : ≈ 26,3 % de cotisations</option></select></label>
+            <label>Frais professionnels (€/mois)<input type="number" id="f-fraisPro" min="0" step="5"></label>
+          </div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pour aller plus loin</h2>
+    <details>
+      <summary>Ce que l'argent ne dit pas</summary>
+      <div class="inner cols">
+        <div><h3>Retraite</h3><p>Un an au SMIC = 4 trimestres de retraite. Le RSA n'en donne aucun. Une carrière complète donne environ 1 200 € net au SMIC et 1 600 € net au salaire médian, contre 1 044 € d'ASPA garantis dès 65 ans sans avoir travaillé.</p></div>
+        <div><h3>Chômage</h3><p>Travailler ouvre des droits au chômage. Le RSA, non.</p></div>
+        <div><h3>Obligations</h3><p>Depuis 2025, le RSA demande en principe 15 heures d'activité par semaine, avec des sanctions possibles.</p></div>
+        <div><h3>Évolution</h3><p>Un salaire peut augmenter avec l'expérience. Les aides, elles, baissent quand les revenus montent.</p></div>
+        <div><h3>Épargne</h3><p>Avoir de l'épargne réduit le RSA et la prime d'activité.</p></div>
+        <div><h3>Handicap</h3><p>Depuis 2023, l'AAH ne dépend plus du salaire du conjoint. Le travail en ESAT ou en entreprise adaptée suit des règles propres.</p></div>
+        <div><h3>Moins de 25 ans</h3><p>Pas de RSA sans enfant. Le Contrat d'engagement jeune dure 12 mois au plus.</p></div>
+      </div>
+    </details>
+    <details>
+      <summary>Toutes les aides recensées</summary>
+      <div class="inner"><p class="muted">Montants maximums 2026. « ≈ » = estimation à vérifier sur le simulateur officiel.</p><div class="scroll"><table class="tbl" id="aides"></table></div></div>
+    </details>
+    <details>
+      <summary>Vérification avec OpenFisca</summary>
+      <div class="inner">
+        <p class="muted">Pour les foyers non modifiés, le RSA, la prime d'activité, l'aide au logement, les prestations familiales, l'ASPA, l'AAH, le chèque énergie et l'impôt viennent d'<a href="https://openfisca.org/fr/" target="_blank" rel="noopener">OpenFisca France</a>, le moteur de calcul libre utilisé notamment par mesdroitssociaux.gouv.fr, avec les barèmes d'octobre 2026. Les autres postes (frais du travail, santé, réductions locales, aide alimentaire) restent des estimations. Quand vous modifiez un foyer, la page repasse sur un modèle approché, recalé sur OpenFisca. Le tableau compare les deux.</p>
+        <div class="scroll"><table class="tbl" id="valid"></table></div>
+        <p class="muted">Règles fines repérées grâce à OpenFisca et intégrées au modèle approché : pour le RSA et la prime d'activité, la CAF ne compte pas la hausse de 2023 de l'allocation de soutien familial, ni les majorations pour âge des allocations familiales, ni la part majorée du complément familial. Saint-Étienne est en zone 2 pour l'aide au logement. Non couverts par OpenFisca ici : le CEJ de Lucas, l'aide au logement et l'impôt de l'auto-entrepreneur (Yanis), les bourses scolaires.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Mentions légales et données personnelles</summary>
+      <div class="inner">
+        <ul class="lim">
+          <li><b>Nature du site :</b> simulateur pédagogique indépendant. Il n'est ni un service de l'administration, ni un calcul officiel de droits. Il n'engage ni la CAF, ni France Travail, ni l'Assurance retraite.</li>
+          <li><b>Dernière mise à jour :</b> 10 octobre 2026.</li>
+          <li><b>Éditeur :</b> le site est édité à titre non professionnel par une personne physique, qui a choisi de ne pas rendre publique son identité conformément à l'article 6-III-2 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique. Son identité a été communiquée à l'hébergeur ci-dessous.</li>
+          <li><b>Contact :</b> plaire.julien@gmail.com</li>
+          <li><b>Hébergeur :</b> Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis — vercel.com.</li>
+          <li><b>Date des barèmes :</b> octobre 2026 (RSA et prestations au 1er avril 2026, SMIC au 1er juin 2026, bourses 2026-2027).</li>
+          <li><b>Moteur de calcul :</b> <a href="https://openfisca.org/fr/" target="_blank" rel="noopener">OpenFisca France</a>, logiciel libre (licence AGPL), complété par des estimations décrites dans « Méthode et sources ».</li>
+          <li><b>Données personnelles :</b> aucun compte, aucun cookie, aucune mesure d'audience. Le profil personnalisé reste dans votre navigateur (stockage local) et peut être effacé en vidant les données du site. Dans la version publiée sur le web, la situation décrite (sans nom ni identifiant) est envoyée à l'API publique d'OpenFisca uniquement pour faire le calcul. Comme tout serveur web, l'hébergeur traite temporairement des données techniques (adresse IP, navigateur, date de la requête) pour assurer le service et la sécurité.</li>
+          <li><b>Vos droits :</b> conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement et d'opposition. Pour les exercer, écrivez à l'adresse de contact ci-dessus. Vous pouvez aussi adresser une réclamation à la CNIL (cnil.fr).</li>
+          <li><b>Licence :</b> le code est publié sous licence MIT (<a href="https://salaire-ou-aides.fr/LICENSE.txt" target="_blank" rel="noopener">texte de la licence</a>) : réutilisation, modification et redistribution libres, en conservant la mention de licence, sans garantie. Les textes, tableaux et graphiques sont publiés sous licence <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener">Creative Commons Attribution 4.0 (CC BY 4.0)</a> : réutilisation libre, y compris commerciale, en citant la source « salaire-ou-aides.fr » (<a href="https://salaire-ou-aides.fr/LICENSE-CONTENU.txt" target="_blank" rel="noopener">détails</a>). Les données publiques citées restent soumises aux conditions de leurs producteurs.</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>Méthode et sources</summary>
+      <div class="inner">
+        <ul class="lim">
+          <li>« Revenu disponible » = salaires nets + toutes les aides (y compris aide au logement, santé gratuite, chèque énergie, prime de Noël, réductions locales) − impôt − santé − frais du travail. Le loyer et les dépenses courantes (énergie, téléphone, internet, assurances, crédit, alimentation) ne sont pas déduits : ils sont identiques dans les deux situations et ne changent donc pas l'écart. Ce montant n'est pas un « reste à vivre ».</li>
+          <li>« Reste à vivre » = revenu disponible − loyer − dépenses courantes − alimentation. Dépenses courantes par défaut : 220 € par mois pour une personne seule (énergie, eau, téléphone, internet, assurance habitation, charges), + 80 € par adulte supplémentaire, + 45 € par enfant. Alimentation minimale : 200 € par adulte et 130 € par enfant. Le montant est modifiable, et peut inclure un crédit.</li>
+          <li>Salaire net ≈ 79 % du brut. SMIC 2026 : 1 867 € brut, 1 478 € net pour 35 heures.</li>
+          <li>Auto-entrepreneur : cotisations sur le chiffre d'affaires (services 21,3 %, vente 12,4 %, libéral ≈ 26,3 %, formation comprise). La CAF et les impôts retiennent le chiffre d'affaires moins un abattement forfaitaire (50 %, 71 % ou 34 %), souvent inférieur au revenu réel. ACRE (cotisations réduites la première année), congés et arrêts maladie non simulés.</li>
+          <li>Sous 1 SMIC, il s'agit d'un temps partiel au taux SMIC. Les frais du travail baissent en partie avec le temps partiel.</li>
+          <li>Transport : 21 jours de travail par mois à temps plein. Abonnement de transports en commun remboursé à 50 % par l'employeur (obligation légale). Voiture déjà possédée : 0,25 €/km (carburant, pneus, entretien). Voiture achetée pour aller travailler : 0,61 €/km, barème kilométrique fiscal d'une 4 CV, qui inclut achat, assurance et usure.</li>
+          <li>Moteur de calcul : OpenFisca France (API publique, barèmes d'octobre 2026) pour les foyers tels que présentés, sur une grille de 51 salaires avec interpolation ; modèle approché recalé sur OpenFisca pour les foyers modifiés et les mois de chômage indemnisé.</li>
+          <li>Les aides sont calculées pour un revenu stable sur l'année. L'aide au logement et la nouvelle bonification de la prime d'activité sont des approximations (écart possible de quelques dizaines d'euros).</li>
+          <li>Santé : prix de la complémentaire (CSS gratuite ou avec participation, mutuelle d'entreprise 35 € seul ou 75 € en famille, mutuelle individuelle 60 € par adulte et 25 € par enfant) et reste à charge hors CSS : franchises et participation de 2 € par consultation, ≈ 6 € par mois et par adulte, 8,33 € en cas de maladie chronique (plafond annuel de 100 € atteint). Dépassements d'honoraires restant à payer après la mutuelle (interdits avec la CSS) : ≈ 2 € par mois et par adulte, 6 € en cas de maladie chronique, 1 € par enfant, majorés de moitié avec une mutuelle individuelle moins couvrante. Estimation à partir des moyennes nationales ; elle varie fortement selon la région et le recours aux spécialistes.</li>
+          <li>Bourses scolaires : barème 2026-2027 selon le revenu fiscal ; l'âge de l'enfant détermine collège (11-14 ans) ou lycée (15-18 ans).</li>
+          <li>Aide alimentaire : valeur estimée à 35 € par personne et par mois, accordée selon le reste à vivre après loyer et dépenses (pleine sous 10 € par jour et par unité de consommation, nulle au-delà de 20 €). Ce n'est pas de l'argent public au sens strict (associations en partie subventionnées) ; elle peut être décochée.</li>
+          <li>Non-recours (option) : seule une partie des personnes éligibles demande ses aides. Les montants sont multipliés par le taux de recours moyen : RSA 66 %, prime d'activité 68 %, ASPA 50 %, chèque énergie 80 % (ordres de grandeur DREES). C'est une moyenne, pas un cas individuel.</li>
+          <li>Emploi précaire (option) : moyenne sur 12 mois. Après au moins 6 mois de travail, chômage indemnisé (ARE ≈ 57 % du brut, au moins 40,4 % + 13,18 € par jour) pendant 0,75 jour par jour travaillé, puis retour aux aides. Délais de versement et carence non simulés.</li>
+          <li>Non simulés : aides ponctuelles, handicap (AAH), chômage, patrimoine.</li>
+          <li>Outil pédagogique, pas un calcul de droits. Pour votre cas : <a href="https://www.mesdroitssociaux.gouv.fr" target="_blank" rel="noopener">mesdroitssociaux.gouv.fr</a>.</li>
+        </ul>
+        <ul class="lim">
+          <li><a href="https://www.legisocial.fr/actualites-sociales/7869-revalorisation-rsa-1er-avril-2026-impact-saisies-salaires.html" target="_blank" rel="noopener">RSA au 1er avril 2026 (Legisocial)</a></li>
+          <li><a href="https://www.previssima.fr/actualite/prime-dactivite-quels-sont-les-nouveaux-montants-au-1er-avril-2026.html" target="_blank" rel="noopener">Prime d'activité 2026 (Previssima)</a></li>
+          <li><a href="https://www.caf.fr/allocataires/actualites/actualites-nationales/la-prime-d-activite-augmente-en-2026" target="_blank" rel="noopener">La prime d'activité augmente en 2026 (CAF)</a></li>
+          <li><a href="https://www.info.gouv.fr/actualite/le-smic-revalorise-le-1er-juin-2026" target="_blank" rel="noopener">SMIC au 1er juin 2026 (info.gouv.fr)</a></li>
+          <li><a href="https://www.aide-sociale.fr/bmaf/" target="_blank" rel="noopener">Base des allocations familiales 2026 (Aide-sociale.fr)</a></li>
+          <li><a href="https://www.aide-sociale.fr/contrat-engagement-jeune/" target="_blank" rel="noopener">Contrat d'engagement jeune (Aide-sociale.fr)</a></li>
+        </ul>
+      </div>
+    </details>
+  </section>
+</div>
+
+<script id="model">
+/* ===== Paramètres 2026 ===== */
+const P = {
+  smicBrut:1867.02, smicNet:1477.93, smicRefPA:1442.40,
+  rsaBase:651.69, paBase:638.28, bmaf:478.16,
+  asf:200.78, bonifMid:185.70, bonifMax:240.63,
+  ars:[426.87,450.42,466.03], heures:151.67, cej:566.17
+};
+P.ratio = P.smicNet/P.smicBrut;
+
+// Résultats du moteur officiel OpenFisca France (api.fr.openfisca.org, barèmes d'octobre 2026),
+// calculés pour chaque foyer non modifié sur une grille de 51 salaires. Grille g, lignes r.
+const OFDATA = {"karim":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":573.49,"aide_logement":304.84,"energie":194.0},{"rsa":499.58,"ppa":44.23,"aide_logement":304.84,"energie":194.0},{"rsa":425.7,"ppa":88.45,"aide_logement":304.84,"energie":194.0},{"rsa":351.8,"ppa":132.68,"aide_logement":304.84,"energie":194.0},{"rsa":277.89,"ppa":176.91,"aide_logement":304.84,"energie":194.0},{"rsa":204.01,"ppa":221.13,"aide_logement":304.84,"energie":194.0},{"rsa":130.11,"ppa":265.36,"aide_logement":304.84,"energie":194.0},{"rsa":56.2,"ppa":309.59,"aide_logement":287.22,"energie":146.0},{"ppa":324.33,"aide_logement":259.14,"energie":146.0},{"ppa":294.66,"aide_logement":234.18,"energie":98.0},{"ppa":268.13,"aide_logement":209.23,"energie":48.0},{"ppa":256.74,"aide_logement":184.27,"energie":48.0},{"ppa":245.36,"aide_logement":156.21,"energie":48.0},{"ppa":233.98,"aide_logement":131.25,"energie":48.0},{"ppa":222.59,"aide_logement":106.3},{"ppa":211.2,"aide_logement":78.22},{"ppa":223.15,"aide_logement":53.26},{"ppa":236.72,"aide_logement":28.31},{"ppa":253.64},{"ppa":242.26},{"ppa":230.88},{"ppa":219.49},{"ppa":208.1,"ir":13.0},{"ppa":196.51,"ir":24.0},{"ppa":166.84,"ir":35.0},{"ppa":137.17,"ir":46.0},{"ppa":107.5,"ir":57.08},{"ppa":77.84,"ir":68.08},{"ppa":48.17,"ir":79.08},{"ppa":18.5,"ir":90.08},{"ir":101.0},{"ir":112.0},{"ir":123.08},{"ir":134.08},{"ir":145.08},{"ir":156.08},{"ir":169.5},{"ir":190.17},{"ir":210.83},{"ir":231.5},{"ir":252.17},{"ir":272.75},{"ir":293.42},{"ir":312.75},{"ir":333.67},{"ir":354.58},{"ir":375.58},{"ir":396.5},{"ir":417.42},{"ir":438.33},{"ir":459.25}]},"camille":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":573.49,"aide_logement":304.84,"energie":194.0},{"rsa":499.58,"ppa":44.23,"aide_logement":304.84,"energie":194.0},{"rsa":425.7,"ppa":88.45,"aide_logement":304.84,"energie":194.0},{"rsa":351.8,"ppa":132.68,"aide_logement":304.84,"energie":194.0},{"rsa":277.89,"ppa":176.91,"aide_logement":304.84,"energie":194.0},{"rsa":204.01,"ppa":221.13,"aide_logement":304.84,"energie":194.0},{"rsa":130.11,"ppa":265.36,"aide_logement":304.84,"energie":194.0},{"rsa":56.2,"ppa":309.59,"aide_logement":287.22,"energie":146.0},{"ppa":324.33,"aide_logement":259.14,"energie":146.0},{"ppa":294.66,"aide_logement":234.18,"energie":98.0},{"ppa":268.13,"aide_logement":209.23,"energie":48.0},{"ppa":256.74,"aide_logement":184.27,"energie":48.0},{"ppa":245.36,"aide_logement":156.21,"energie":48.0},{"ppa":233.98,"aide_logement":131.25,"energie":48.0},{"ppa":222.59,"aide_logement":106.3},{"ppa":211.2,"aide_logement":78.22},{"ppa":223.15,"aide_logement":53.26},{"ppa":236.72,"aide_logement":28.31},{"ppa":253.64},{"ppa":242.26},{"ppa":230.88},{"ppa":219.49},{"ppa":208.1,"ir":13.0},{"ppa":196.51,"ir":24.0},{"ppa":166.84,"ir":35.0},{"ppa":137.17,"ir":46.0},{"ppa":107.5,"ir":57.08},{"ppa":77.84,"ir":68.08},{"ppa":48.17,"ir":79.08},{"ppa":18.5,"ir":90.08},{"ir":101.0},{"ir":112.0},{"ir":123.08},{"ir":134.08},{"ir":145.08},{"ir":156.08},{"ir":169.5},{"ir":190.17},{"ir":210.83},{"ir":231.5},{"ir":252.17},{"ir":272.75},{"ir":293.42},{"ir":312.75},{"ir":333.67},{"ir":354.58},{"ir":375.58},{"ir":396.5},{"ir":417.42},{"ir":438.33},{"ir":459.25}]},"bernard":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55,"base"],"r":[{"ppa":459.93,"aide_logement":52.74,"af":153.01,"ars":858.01},{"ppa":440.94,"aide_logement":42.06,"af":153.01,"ars":858.01},{"ppa":435.32,"aide_logement":18.01,"af":153.01,"ars":858.01},{"ppa":423.66,"af":153.01,"ars":858.01},{"ppa":393.99,"af":153.01,"ars":858.01},{"ppa":364.32,"af":153.01,"ars":858.01},{"ppa":334.65,"af":153.01,"ars":858.01},{"ppa":304.98,"af":153.01,"ars":858.01},{"ppa":275.31,"af":153.01,"ars":858.01},{"ppa":245.65,"af":153.01,"ars":858.01},{"ppa":219.11,"af":153.01,"ars":858.01},{"ppa":207.73,"af":153.01,"ars":858.01},{"ppa":196.34,"af":153.01,"ars":858.01},{"ppa":184.96,"af":153.01,"ars":239.46},{"ppa":173.57,"af":153.01},{"ppa":162.19,"af":153.01},{"ppa":150.8,"af":153.01},{"ppa":139.42,"af":153.01},{"ppa":128.03,"af":153.01},{"ppa":116.65,"af":153.01},{"ppa":105.26,"af":153.01},{"ppa":93.88,"af":153.01},{"ppa":82.49,"af":153.01},{"ppa":70.9,"af":153.01,"ir":5.92},{"ppa":41.23,"af":153.01,"ir":16.92},{"af":153.01,"ir":27.92},{"af":153.01,"ir":39.0},{"af":153.01,"ir":50.0},{"af":153.01,"ir":61.0},{"af":153.01,"ir":71.92},{"af":153.01,"ir":82.92},{"af":153.01,"ir":93.92},{"af":153.01,"ir":104.92},{"af":153.01,"ir":116.0},{"af":153.01,"ir":127.0},{"af":153.01,"ir":138.0},{"af":153.01,"ir":149.0},{"af":153.01,"ir":160.0},{"af":153.01,"ir":171.0},{"af":153.01,"ir":182.08},{"af":153.01,"ir":193.08},{"af":153.01,"ir":204.0},{"af":153.01,"ir":215.0},{"af":153.01,"ir":225.25},{"af":153.01,"ir":236.5},{"af":153.01,"ir":247.67},{"af":153.01,"ir":258.75},{"af":153.01,"ir":269.92},{"af":153.01,"ir":278.58},{"af":153.01,"ir":286.25},{"af":153.01,"ir":293.92},{"rsa":1021.99,"aide_logement":492.28,"af":153.01,"ars":858.01,"energie":277.0}]},"sandrine":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":611.31,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":537.4,"ppa":44.23,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":463.52,"ppa":88.45,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":389.62,"ppa":132.68,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":315.71,"ppa":176.91,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":241.83,"ppa":221.13,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":167.93,"ppa":265.36,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":94.02,"ppa":309.59,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"rsa":20.13,"ppa":353.8,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"ppa":324.13,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"ppa":297.59,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"ppa":286.21,"aide_logement":492.28,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"ppa":274.82,"aide_logement":469.51,"af":153.01,"asf":403.57,"ars":881.68,"energie":240.0},{"ppa":263.44,"aide_logement":448.14,"af":153.01,"asf":403.57,"ars":881.68,"energie":176.0},{"ppa":252.06,"aide_logement":426.77,"af":153.01,"asf":403.57,"ars":881.68,"energie":176.0},{"ppa":240.67,"aide_logement":402.72,"af":153.01,"asf":403.57,"ars":881.68,"energie":113.0},{"ppa":229.29,"aide_logement":381.34,"af":153.01,"asf":403.57,"ars":881.68,"energie":113.0},{"ppa":217.9,"aide_logement":359.97,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":206.52,"aide_logement":338.6,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":195.13,"aide_logement":314.56,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":183.75,"aide_logement":293.19,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":172.36,"aide_logement":271.81,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":160.98,"aide_logement":250.44,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":149.39,"aide_logement":226.39,"af":153.01,"asf":403.57,"ars":881.68,"energie":63.0},{"ppa":119.72,"aide_logement":205.02,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":95.97,"aide_logement":183.65,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":87.67,"aide_logement":162.27,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":82.04,"aide_logement":138.24,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":73.75,"aide_logement":116.86,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":65.45,"aide_logement":95.49,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":59.83,"aide_logement":71.44,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":51.54,"aide_logement":50.07,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":43.23,"aide_logement":28.7,"af":153.01,"asf":403.57,"ars":881.68},{"ppa":34.94,"aide_logement":7.32,"af":153.01,"asf":403.57,"ars":881.68},{"af":153.01,"asf":403.57,"ars":881.68},{"af":153.01,"asf":403.57,"ars":881.68},{"af":153.01,"asf":403.57,"ars":881.68,"ir":12.67},{"af":153.01,"asf":403.57,"ars":881.68,"ir":23.67},{"af":153.01,"asf":403.57,"ars":881.68,"ir":34.67},{"af":153.01,"asf":403.57,"ars":881.68,"ir":45.67},{"af":153.01,"asf":403.57,"ars":881.68,"ir":56.67},{"af":153.01,"asf":403.57,"ars":881.68,"ir":67.58},{"af":153.01,"asf":403.57,"ars":881.68,"ir":78.75},{"af":153.01,"asf":403.57,"ars":881.68,"ir":89.0},{"af":153.01,"asf":403.57,"ars":170.2,"ir":100.17},{"af":153.01,"asf":403.57,"ir":111.25},{"af":153.01,"asf":403.57,"ir":122.42},{"af":153.01,"asf":403.57,"ir":133.58},{"af":153.01,"asf":403.57,"ir":144.67},{"af":153.01,"asf":403.57,"ir":155.83},{"af":153.01,"asf":403.57,"ir":166.42}]},"moreau":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":822.83,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":748.93,"ppa":44.23,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":675.05,"ppa":88.45,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":601.14,"ppa":132.68,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":527.24,"ppa":176.91,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":453.36,"ppa":221.13,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":379.45,"ppa":265.36,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":305.55,"ppa":309.59,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":231.66,"ppa":353.82,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":157.77,"ppa":398.04,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":83.87,"ppa":445.41,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"rsa":9.98,"ppa":493.71,"aide_logement":492.28,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"ppa":482.33,"aide_logement":469.51,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"ppa":470.94,"aide_logement":448.14,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"ppa":459.56,"aide_logement":426.77,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":277.0},{"ppa":448.17,"aide_logement":402.72,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":202.0},{"ppa":436.79,"aide_logement":381.34,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":202.0},{"ppa":425.4,"aide_logement":359.97,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":202.0},{"ppa":414.02,"aide_logement":338.6,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":126.0},{"ppa":402.63,"aide_logement":314.56,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":126.0},{"ppa":391.25,"aide_logement":293.19,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":379.87,"aide_logement":271.81,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":368.48,"aide_logement":250.44,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":356.89,"aide_logement":226.39,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":327.22,"aide_logement":205.02,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":303.47,"aide_logement":183.65,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":295.18,"aide_logement":162.27,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":289.54,"aide_logement":138.24,"af":153.01,"paje_base":199.15,"ars":429.01,"energie":76.0},{"ppa":281.25,"aide_logement":116.86,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":272.95,"aide_logement":95.49,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":267.33,"aide_logement":71.44,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":259.04,"aide_logement":50.07,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":250.74,"aide_logement":28.7,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":242.44,"aide_logement":7.32,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":220.1,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":190.43,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":160.75,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":131.09,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":101.42,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":71.75,"af":153.01,"paje_base":199.15,"ars":429.01},{"ppa":42.08,"af":153.01,"paje_base":199.15,"ars":429.01},{"af":153.01,"paje_base":199.15,"ars":429.01},{"af":153.01,"paje_base":199.15,"ars":429.01},{"af":153.01,"paje_base":199.15,"ars":429.01},{"af":153.01,"paje_base":199.15},{"af":153.01,"paje_base":199.15},{"af":153.01,"paje_base":99.58},{"af":153.01,"paje_base":99.58},{"af":153.01,"paje_base":99.58},{"af":153.01,"paje_base":99.58},{"af":153.01,"paje_base":99.58}]},"diallo":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":952.1,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":878.19,"ppa":44.23,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":804.31,"ppa":88.45,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":730.41,"ppa":132.68,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":656.5,"ppa":176.91,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":582.62,"ppa":221.13,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":508.72,"ppa":265.36,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":434.81,"ppa":309.59,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":360.92,"ppa":353.82,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":287.04,"ppa":398.04,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":213.13,"ppa":445.41,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":139.24,"ppa":507.92,"aide_logement":693.61,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"rsa":65.33,"ppa":570.43,"aide_logement":690.28,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":589.48,"aide_logement":672.4,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":578.09,"aide_logement":654.52,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":566.71,"aide_logement":634.4,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":555.32,"aide_logement":616.52,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":543.94,"aide_logement":598.64,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":532.55,"aide_logement":580.76,"af":621.61,"cf":298.75,"ars":1350.04,"energie":277.0},{"ppa":521.17,"aide_logement":560.64,"af":621.61,"cf":298.75,"ars":1350.04,"energie":202.0},{"ppa":509.78,"aide_logement":542.76,"af":621.61,"cf":298.75,"ars":1350.04,"energie":202.0},{"ppa":498.4,"aide_logement":524.87,"af":621.61,"cf":298.75,"ars":1350.04,"energie":202.0},{"ppa":487.01,"aide_logement":506.99,"af":621.61,"cf":298.75,"ars":1350.04,"energie":126.0},{"ppa":475.42,"aide_logement":486.88,"af":621.61,"cf":298.75,"ars":1350.04,"energie":126.0},{"ppa":445.75,"aide_logement":468.99,"af":621.61,"cf":298.75,"ars":1350.04,"energie":126.0},{"ppa":416.08,"aide_logement":451.11,"af":621.61,"cf":298.75,"ars":1350.04,"energie":126.0},{"ppa":386.41,"aide_logement":433.23,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":356.75,"aide_logement":413.11,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":327.08,"aide_logement":395.23,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":297.41,"aide_logement":377.35,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":267.74,"aide_logement":357.23,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":238.07,"aide_logement":339.35,"af":621.61,"cf":298.75,"ars":1350.04,"energie":76.0},{"ppa":208.4,"aide_logement":321.47,"af":621.61,"cf":199.15,"ars":1350.04,"energie":76.0},{"ppa":178.73,"aide_logement":303.59,"af":621.61,"cf":199.15,"ars":1350.04,"energie":76.0},{"ppa":149.06,"aide_logement":283.48,"af":621.61,"cf":199.15,"ars":1350.04,"energie":76.0},{"ppa":119.39,"aide_logement":265.6,"af":621.61,"cf":199.15,"ars":1350.04,"energie":76.0},{"ppa":89.72,"aide_logement":247.72,"af":621.61,"cf":199.15,"ars":1350.04},{"ppa":60.05,"aide_logement":229.84,"af":621.61,"cf":199.15,"ars":1350.04},{"ppa":30.38,"aide_logement":209.72,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":191.84,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":173.95,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":156.07,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":135.96,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":120.31,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":100.19,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":82.31,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":62.19,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":44.31,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":26.43,"af":621.61,"cf":199.15,"ars":1350.04},{"aide_logement":6.31,"af":621.61,"cf":199.15,"ars":1350.04},{"af":621.61,"cf":199.15,"ars":1350.04}]},"nadia":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":652.65,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":578.75,"ppa":44.23,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":504.87,"ppa":88.45,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":430.96,"ppa":132.68,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":357.06,"ppa":176.91,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":283.17,"ppa":221.13,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":209.27,"ppa":265.36,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":135.37,"ppa":309.59,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"rsa":61.48,"ppa":353.82,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"ppa":365.89,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"ppa":339.35,"aide_logement":476.12,"asf":201.78,"paje_base":199.15,"energie":240.0},{"ppa":327.97,"aide_logement":471.4,"asf":201.78,"paje_base":199.15,"energie":176.0},{"ppa":316.58,"aide_logement":443.67,"asf":201.78,"paje_base":199.15,"energie":176.0},{"ppa":305.2,"aide_logement":419.01,"asf":201.78,"paje_base":199.15,"energie":113.0},{"ppa":293.82,"aide_logement":394.37,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":282.43,"aide_logement":366.63,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":271.04,"aide_logement":341.97,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":259.66,"aide_logement":317.33,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":248.27,"aide_logement":292.67,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":236.89,"aide_logement":264.93,"asf":201.78,"paje_base":199.15,"energie":63.0},{"ppa":225.51,"aide_logement":240.28,"asf":201.78,"paje_base":199.15},{"ppa":214.12,"aide_logement":215.63,"asf":201.78,"paje_base":199.15},{"ppa":202.74,"aide_logement":190.97,"asf":201.78,"paje_base":199.15},{"ppa":191.14,"aide_logement":163.24,"asf":201.78,"paje_base":199.15},{"ppa":176.08,"aide_logement":138.58,"asf":201.78,"paje_base":199.15},{"ppa":171.06,"aide_logement":113.93,"asf":201.78,"paje_base":199.15},{"ppa":166.05,"aide_logement":89.27,"asf":201.78,"paje_base":199.15},{"ppa":164.11,"aide_logement":61.54,"asf":201.78,"paje_base":199.15},{"ppa":159.11,"aide_logement":36.88,"asf":201.78,"paje_base":199.15},{"ppa":154.09,"aide_logement":12.23,"asf":201.78,"paje_base":199.15,"ir":12.83},{"ppa":136.65,"asf":201.78,"paje_base":199.15,"ir":23.83},{"ppa":106.98,"asf":201.78,"paje_base":199.15,"ir":34.83},{"ppa":77.31,"asf":201.78,"paje_base":199.15,"ir":45.83},{"ppa":47.64,"asf":201.78,"paje_base":199.15,"ir":56.83},{"ppa":17.97,"asf":201.78,"paje_base":199.15,"ir":67.83},{"asf":201.78,"paje_base":199.15,"ir":78.83},{"asf":201.78,"paje_base":199.15,"ir":89.83},{"asf":201.78,"paje_base":199.15,"ir":100.92},{"asf":201.78,"paje_base":199.15,"ir":111.92},{"asf":201.78,"paje_base":199.15,"ir":122.92},{"asf":201.78,"paje_base":199.15,"ir":133.92},{"asf":201.78,"paje_base":199.15,"ir":144.83},{"asf":201.78,"paje_base":199.15,"ir":155.92},{"asf":201.78,"paje_base":199.15,"ir":165.92},{"asf":201.78,"paje_base":199.15,"ir":183.08},{"asf":201.78,"paje_base":199.15,"ir":204.0},{"asf":201.78,"paje_base":199.15,"ir":225.0},{"asf":201.78,"paje_base":199.15,"ir":245.92},{"asf":201.78,"paje_base":199.15,"ir":266.83},{"asf":201.78,"paje_base":199.15,"ir":287.75},{"asf":201.78,"paje_base":99.58,"ir":308.67}]},"gerard":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"rsa":573.49,"aide_logement":286.71,"energie":194.0},{"rsa":499.58,"ppa":44.23,"aide_logement":286.71,"energie":194.0},{"rsa":425.7,"ppa":88.45,"aide_logement":286.71,"energie":194.0},{"rsa":351.8,"ppa":132.68,"aide_logement":286.71,"energie":194.0},{"rsa":277.89,"ppa":176.91,"aide_logement":286.71,"energie":194.0},{"rsa":204.01,"ppa":221.13,"aide_logement":286.71,"energie":194.0},{"rsa":130.11,"ppa":265.36,"aide_logement":286.71,"energie":194.0},{"rsa":56.2,"ppa":309.59,"aide_logement":269.33,"energie":146.0},{"ppa":324.33,"aide_logement":241.64,"energie":146.0},{"ppa":294.66,"aide_logement":217.02,"energie":98.0},{"ppa":268.13,"aide_logement":192.4,"energie":48.0},{"ppa":256.74,"aide_logement":167.79,"energie":48.0},{"ppa":245.36,"aide_logement":140.1,"energie":48.0},{"ppa":233.98,"aide_logement":115.48,"energie":48.0},{"ppa":222.59,"aide_logement":90.86},{"ppa":224.63,"aide_logement":63.17},{"ppa":237.85,"aide_logement":38.56},{"ppa":251.08,"aide_logement":13.95},{"ppa":253.64},{"ppa":242.26},{"ppa":230.88},{"ppa":219.49},{"ppa":208.1,"ir":13.0},{"ppa":196.51,"ir":24.0},{"ppa":166.84,"ir":35.0},{"ppa":137.17,"ir":46.0},{"ppa":107.5,"ir":57.08},{"ppa":77.84,"ir":68.08},{"ppa":48.17,"ir":79.08},{"ppa":18.5,"ir":90.08},{"ir":101.0},{"ir":112.0},{"ir":123.08},{"ir":134.08},{"ir":145.08},{"ir":156.08},{"ir":169.5},{"ir":190.17},{"ir":210.83},{"ir":231.5},{"ir":252.17},{"ir":272.75},{"ir":293.42},{"ir":312.75},{"ir":333.67},{"ir":354.58},{"ir":375.58},{"ir":396.5},{"ir":417.42},{"ir":438.33},{"ir":459.25}]},"lefevre":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"ppa":551.93,"aide_logement":197.95,"ars":429.01,"energie":63.0},{"ppa":525.84,"aide_logement":185.99,"ars":429.01,"energie":63.0},{"ppa":523.09,"aide_logement":159.07,"ars":429.01,"energie":63.0},{"ppa":520.32,"aide_logement":132.17,"ars":429.01,"energie":63.0},{"ppa":520.55,"aide_logement":102.27,"ars":429.01},{"ppa":517.8,"aide_logement":75.35,"ars":429.01},{"ppa":512.05,"aide_logement":51.43,"ars":429.01},{"ppa":509.28,"aide_logement":24.53,"ars":429.01},{"ppa":504.14,"ars":429.01},{"ppa":474.48,"ars":429.01},{"ppa":447.94,"ars":429.01},{"ppa":436.56,"ars":429.01},{"ppa":425.17,"ars":429.01},{"ppa":413.79,"ars":429.01},{"ppa":402.4,"ars":429.01},{"ppa":391.02,"ars":429.01},{"ppa":379.63},{"ppa":368.25},{"ppa":356.86},{"ppa":345.48},{"ppa":334.09},{"ppa":322.71},{"ppa":311.32},{"ppa":299.73},{"ppa":270.06},{"ppa":240.39},{"ppa":210.72},{"ppa":181.06,"ir":7.75},{"ppa":151.39,"ir":18.75},{"ppa":121.72,"ir":29.75},{"ppa":92.05,"ir":40.67},{"ppa":62.38,"ir":51.67},{"ppa":32.71,"ir":62.75},{"ir":73.75},{"ir":84.75},{"ir":95.75},{"ir":106.75},{"ir":117.75},{"ir":128.75},{"ir":139.83},{"ir":150.83},{"ir":161.83},{"ir":172.83},{"ir":183.08},{"ir":194.25},{"ir":205.42},{"ir":216.5},{"ir":227.67},{"ir":238.83},{"ir":250.0},{"ir":261.08}]},"lucas":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"aide_logement":304.84,"energie":194.0},{"ppa":44.23,"aide_logement":304.84,"energie":194.0},{"ppa":88.45,"aide_logement":304.84,"energie":194.0},{"ppa":132.68,"aide_logement":304.84,"energie":194.0},{"ppa":176.91,"aide_logement":304.84,"energie":194.0},{"ppa":221.13,"aide_logement":304.84,"energie":194.0},{"ppa":265.36,"aide_logement":304.84,"energie":194.0},{"ppa":309.59,"aide_logement":287.22,"energie":146.0},{"ppa":324.33,"aide_logement":259.14,"energie":146.0},{"ppa":294.66,"aide_logement":234.18,"energie":98.0},{"ppa":268.13,"aide_logement":209.23,"energie":48.0},{"ppa":256.74,"aide_logement":184.27,"energie":48.0},{"ppa":245.36,"aide_logement":156.21,"energie":48.0},{"ppa":233.98,"aide_logement":131.25,"energie":48.0},{"ppa":222.59,"aide_logement":106.3},{"ppa":211.2,"aide_logement":78.22},{"ppa":223.15,"aide_logement":53.26},{"ppa":236.72,"aide_logement":28.31},{"ppa":253.64},{"ppa":242.26},{"ppa":230.88},{"ppa":219.49},{"ppa":208.1,"ir":13.0},{"ppa":196.51,"ir":24.0},{"ppa":166.84,"ir":35.0},{"ppa":137.17,"ir":46.0},{"ppa":107.5,"ir":57.08},{"ppa":77.84,"ir":68.08},{"ppa":48.17,"ir":79.08},{"ppa":18.5,"ir":90.08},{"ir":101.0},{"ir":112.0},{"ir":123.08},{"ir":134.08},{"ir":145.08},{"ir":156.08},{"ir":169.5},{"ir":190.17},{"ir":210.83},{"ir":231.5},{"ir":252.17},{"ir":272.75},{"ir":293.42},{"ir":312.75},{"ir":333.67},{"ir":354.58},{"ir":375.58},{"ir":396.5},{"ir":417.42},{"ir":438.33},{"ir":459.25}]},"sophie":{"g":[0.0,93.35,186.7,280.05,373.4,466.75,560.11,653.46,746.81,840.16,933.51,1026.86,1120.21,1213.56,1306.91,1400.27,1493.62,1586.97,1680.32,1773.67,1867.02,1960.37,2053.72,2147.07,2240.42,2333.78,2427.13,2520.48,2613.83,2707.18,2800.53,2893.88,2987.23,3080.58,3173.93,3267.28,3360.64,3453.99,3547.34,3640.69,3734.04,3827.39,3920.74,4014.09,4107.44,4200.8,4294.15,4387.5,4480.85,4574.2,4667.55],"r":[{"aide_logement":304.84,"energie":194.0,"aah":1041.59,"mva":104.77},{"aide_logement":304.84,"energie":194.0,"aah":1026.81,"mva":104.77},{"aide_logement":304.84,"energie":194.0,"aah":1012.03,"mva":104.77},{"aide_logement":304.84,"energie":194.0,"aah":997.25,"mva":104.77},{"aide_logement":304.84,"energie":194.0,"aah":982.47,"mva":104.77},{"ppa":175.97,"aide_logement":304.84,"energie":194.0,"aah":967.69,"mva":104.77},{"ppa":166.86,"aide_logement":304.84,"energie":194.0,"aah":952.91,"mva":104.77},{"ppa":157.75,"aide_logement":287.22,"energie":146.0,"aah":938.13,"mva":104.77},{"ppa":150.56,"aide_logement":259.14,"energie":146.0,"aah":910.93,"mva":104.77},{"ppa":146.0,"aide_logement":234.18,"energie":98.0,"aah":866.6,"mva":104.77},{"ppa":141.45,"aide_logement":209.23,"energie":48.0,"aah":822.26,"mva":104.77},{"ppa":136.9,"aide_logement":184.27,"energie":48.0,"aah":777.92,"mva":104.77},{"ppa":132.34,"aide_logement":156.21,"energie":48.0,"aah":733.58,"mva":104.77},{"ppa":127.79,"aide_logement":131.25,"energie":48.0,"aah":689.25,"mva":104.77},{"ppa":123.23,"aide_logement":106.3,"aah":644.91,"mva":104.77},{"ppa":116.15,"aide_logement":78.22,"aah":600.57,"mva":104.77},{"ppa":127.61,"aide_logement":53.26,"aah":556.23,"mva":104.77},{"ppa":140.7,"aide_logement":28.31,"aah":511.89,"mva":104.77},{"ppa":157.14,"aah":467.55},{"ppa":145.27,"aah":423.21},{"ppa":133.4,"aah":378.88},{"ppa":121.53,"aah":334.54},{"ppa":109.67,"ir":13.0,"aah":290.2},{"ppa":97.8,"ir":24.0,"aah":245.87},{"ppa":85.93,"ir":35.0,"aah":201.53},{"ppa":74.06,"ir":46.0,"aah":157.19},{"ppa":62.19,"ir":57.08,"aah":112.85},{"ppa":50.33,"ir":68.08,"aah":68.52},{"ppa":38.46,"ir":79.08,"aah":24.18},{"ppa":18.5,"ir":90.08},{"ir":101.0},{"ir":112.0},{"ir":123.08},{"ir":134.08},{"ir":145.08},{"ir":156.08},{"ir":169.5},{"ir":190.17},{"ir":210.83},{"ir":231.5},{"ir":252.17},{"ir":272.75},{"ir":293.42},{"ir":312.75},{"ir":333.67},{"ir":354.58},{"ir":375.58},{"ir":396.5},{"ir":417.42},{"ir":438.33},{"ir":459.25}]},"yanis":{"g":[0.0,118.62,237.23,355.85,474.47,593.08,711.7,830.31,948.93,1067.55,1186.16,1304.78,1423.4,1542.01,1660.63,1779.24,1897.86,2016.48,2135.09,2253.71,2372.33,2490.94,2609.56,2728.17,2846.79,2965.41,3084.02,3202.64,3321.26,3439.87,3558.49,3677.1,3795.72,3914.34,4032.95,4151.57,4270.19,4388.8,4507.42,4626.03,4744.65,4863.27,4981.88,5100.5,5219.12,5337.73,5456.35,5574.96,5693.58,5812.2,5930.81],"r":[{"rsa":573.49,"aide_logement":304.84,"energie":194.0},{"rsa":514.18,"ppa":35.5,"aide_logement":304.84,"energie":194.0},{"rsa":454.87,"ppa":70.99,"aide_logement":304.84,"energie":194.0},{"rsa":395.56,"ppa":106.49,"aide_logement":304.84,"energie":194.0},{"rsa":336.25,"ppa":141.99,"aide_logement":304.84,"energie":194.0},{"rsa":276.95,"ppa":177.48,"aide_logement":304.84,"energie":194.0},{"rsa":217.64,"ppa":212.98,"aide_logement":304.84,"energie":194.0},{"rsa":158.33,"ppa":248.47,"aide_logement":304.84,"energie":194.0},{"rsa":99.02,"ppa":283.97,"aide_logement":304.84,"energie":194.0},{"rsa":39.71,"ppa":319.46,"aide_logement":304.84,"energie":194.0},{"ppa":323.56,"aide_logement":304.84,"energie":194.0},{"ppa":299.75,"aide_logement":304.84,"energie":194.0},{"ppa":275.94,"aide_logement":304.84,"energie":194.0},{"ppa":263.19,"aide_logement":304.84,"energie":194.0},{"ppa":254.05,"aide_logement":304.84,"energie":194.0},{"ppa":244.92,"aide_logement":304.84,"energie":194.0},{"ppa":235.78,"aide_logement":304.84,"energie":194.0},{"ppa":226.64,"aide_logement":304.84,"energie":194.0},{"ppa":217.51,"aide_logement":304.84,"energie":194.0},{"ppa":208.37,"aide_logement":304.84,"energie":194.0},{"ppa":199.23,"aide_logement":304.84,"energie":194.0},{"ppa":190.09,"aide_logement":304.84,"energie":194.0},{"ppa":180.96,"aide_logement":304.84,"energie":194.0},{"ppa":171.82,"aide_logement":304.84,"energie":194.0},{"ppa":162.68,"aide_logement":304.84,"energie":194.0},{"ppa":153.55,"aide_logement":304.84,"energie":194.0},{"ppa":144.41,"aide_logement":304.84,"energie":194.0},{"ppa":135.27,"aide_logement":304.84,"energie":194.0},{"ppa":126.13,"aide_logement":304.84,"energie":194.0},{"ppa":111.76,"aide_logement":304.84,"energie":194.0},{"ppa":87.95,"aide_logement":304.84,"energie":194.0},{"ppa":64.14,"aide_logement":304.84,"energie":194.0},{"ppa":40.33,"aide_logement":304.84,"energie":194.0},{"ppa":16.51,"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0},{"aide_logement":304.84,"energie":194.0}]},"monique":{"g":[0,1],"r":[{"aide_logement":286.71,"aspa":1043.6,"energie":194.0},{}]}};
+// Aides reprises d'OpenFisca, par foyer (le CEJ et le cas auto-entrepreneur ne sont pas tous couverts)
+// Aides reprises d'OpenFisca : tout, sauf pour l'auto-entrepreneur (RSA et prime d'activité) et le CEJ (prime d'activité exclue)
+function keysFor(h){ return h.ae ? ["rsa","ppa"] : h.cej ? ["rsa","aide_logement","af","energie","ir"] : null; }
+
+// ---------- OpenFisca en direct (version hébergée hors de claude.ai) ----------
+const LIVE_OF = true;   // passé à true par le script de publication du site
+const OF_API = "https://api.fr.openfisca.org/latest/calculate";
+const ZONE_COMMUNE = {1:"75056",2:"69123",3:"23096"};   // Paris, Lyon, Guéret
+const DEPCOM = {camille:["44109",2],bernard:["44109",2],karim:["69123",2],sandrine:["42218",2],moreau:["44109",2],diallo:["93066",1],nadia:["75056",1],gerard:["23096",3],lefevre:["67482",2],lucas:["35238",2],sophie:["31555",2],yanis:["33063",2],monique:["23096",3]};
+const OFSTATE = {};
+let ofTimer = null;
+function ofHash(h){ return JSON.stringify([h.adults,h.age,h.kids,h.zone,h.loyer,h.s2||0,!!h.asf,!!h.aah,!!h.ae,h.activite||"",h.pensionMed||0,!!h.compareRetraite,!!h.compareCouple,!!h.majore,h.refS||0]); }
+function depcomFor(h){ const d=DEPCOM[h.id]; return d && d[1]===h.zone ? d[0] : ZONE_COMMUNE[h.zone]; }
+function ofSituation(h){
+  const MOIS=[]; for(const y of [2024,2025,2026]) for(let m=1;m<=12;m++) MOIS.push(`${y}-${String(m).padStart(2,"0")}`);
+  const PER="2026-10", monthly=v=>Object.fromEntries(MOIS.map(m=>[m,v]));
+  let points, grid;
+  if(h.compareRetraite){ points=[[0,0,0],[0,0,(h.pensionMed||0)/0.909]]; grid=[0,1]; }
+  else { const top=Math.max(2.5*fullS(h), 1.2*(h.refS||0)); grid=[...Array(51)].map((_,i)=>Math.round(i*top/50*100)/100);
+    points=grid.map(S=>[S,h.s2||0,0]); if(h.compareCouple){ points.push([0,0,0]); grid=grid.concat(["base"]); } }
+  const sit={individus:{},familles:{},menages:{},foyers_fiscaux:{}};
+  points.forEach(([S,S2,pension],n)=>{
+    const pre=`p${n}_`, parents=[], enfants=[];
+    for(let i=0;i<h.adults;i++){
+      const k=pre+"a"+i, d={date_naissance:{ETERNITY:`${2026-h.age}-01-15`}};
+      if(h.ae && i===0) d.rpns_micro_entreprise_CA_bic_service_imp={"2024":12*S,"2025":12*S,"2026":12*S};
+      else d.salaire_de_base=monthly(i===0?S:S2);
+      if(h.aah && i===0){ d.handicap=monthly(true); d.taux_incapacite=monthly(0.8); d.aah={[PER]:null}; d.mva={[PER]:null}; }
+      if(h.compareRetraite && i===0) d.retraite_brute=monthly(pension);
+      sit.individus[k]=d; parents.push(k);
+    }
+    h.kids.forEach((a,j)=>{ const k=pre+"e"+j; sit.individus[k]={date_naissance:{ETERNITY:`${2026-a}-03-01`}}; enfants.push(k); });
+    const f={parents,enfants,ars:{"2026":null}};
+    ["rsa","ppa","aide_logement","af","cf","asf","paje_base","aspa"].forEach(v=>f[v]={[PER]:null});
+    if(h.adults===1 && h.kids.length && !h.asf) f.asf_elig=monthly(false);   // pension alimentaire versée : pas d'ASF
+    sit.familles[pre+"f"]=f;
+    sit.menages[pre+"m"]={personne_de_reference:parents.slice(0,1),conjoint:parents.slice(1),enfants,loyer:monthly(h.loyer),
+      statut_occupation_logement:monthly("locataire_vide"),depcom:monthly(depcomFor(h)),cheque_energie:{"2026":null}};
+    sit.foyers_fiscaux[pre+"ff"]={declarants:parents,personnes_a_charge:enfants,impot_revenu_restant_a_payer:{"2026":null}};
+  });
+  return {sit,grid,n:points.length};
+}
+function ofParse(res,n,h){
+  const PER="2026-10", rows=[];
+  for(let i=0;i<n;i++){ const pre=`p${i}_`, f=res.familles[pre+"f"], m=res.menages[pre+"m"], a0=res.individus[pre+"a0"], r={};
+    ["rsa","ppa","aide_logement","af","cf","asf","paje_base","aspa"].forEach(k=>{ const v=f[k][PER]; if(v) r[k]=v; });
+    if(f.ars["2026"]) r.ars=f.ars["2026"]; if(m.cheque_energie["2026"]) r.energie=m.cheque_energie["2026"];
+    const ir=-res.foyers_fiscaux[pre+"ff"].impot_revenu_restant_a_payer["2026"]/12; if(ir) r.ir=ir;
+    if(h.aah){ r.aah=a0.aah[PER]; r.mva=a0.mva[PER]; }
+    rows.push(r); }
+  return rows;
+}
+async function ofFetch(h){
+  const hash=ofHash(h); OFSTATE[h.id]="loading"; if(cur===h) update();
+  try{
+    const {sit,grid,n}=ofSituation(h);
+    const resp=await fetch(OF_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sit)});
+    if(!resp.ok) throw new Error("HTTP "+resp.status);
+    const res=await resp.json();
+    if(ofHash(h)!==hash) return;   // le profil a encore changé entre-temps
+    OFDATA[h.id]={g:grid,r:ofParse(res,n,h),hash}; OFSTATE[h.id]="ok";
+  }catch(e){ OFSTATE[h.id]="error"; }
+  if(typeof renderTop==="function"){ renderTop(); if(cur===h) update(); }
+}
+function scheduleOF(h){ if(!LIVE_OF || !h.edited) return; clearTimeout(ofTimer); ofTimer=setTimeout(()=>ofFetch(h),800); }
+function ofLookup(h,S,are){
+  if(OPTS.noOF || are>0 || !OFDATA[h.id]) return null;
+  const t=OFDATA[h.id], val=(row,k)=>row[k]||0;
+  if(h.edited && t.hash!==ofHash(h)) return null;   // foyer modifié : seulement si OpenFisca a recalculé ce profil
+  if(h.compareRetraite){ const i = h.pension>0 ? 1 : 0; return t.r[i]; }
+  if(h.compareCouple && (h.s2===0)) { if(S!==0) return null; return t.r[t.g.indexOf("base")]; }
+  const g=t.g.filter(x=>x!=="base");
+  if(S<g[0] || S>g[g.length-1]) return null;
+  let i=0; while(i<g.length-2 && S>g[i+1]) i++;
+  const w=(S-g[i])/(g[i+1]-g[i]), a=t.r[i], b=t.r[i+1], out={};
+  for(const k of new Set([...Object.keys(a),...Object.keys(b)])) out[k]=val(a,k)*(1-w)+val(b,k)*w;
+  return out;
+}
+const OPTS = {alim:true, nonRecours:false, mois:12, noOF:false};
+// Taux de recours moyens (DREES) appliqués quand l'option « non-recours » est cochée
+const RECOURS = {rsa:0.66, pa:0.68, aspa:0.5, energie:0.8};
+// Coût de la voiture au km : usage en plus d'une voiture déjà possédée (carburant, usure) ou coût complet (barème fiscal 4 CV)
+const KM = {vp:0.25, va:0.606};
+// Bourses 2026-2027 : montants annuels par échelon et plafonds de revenu fiscal (1 à 5 enfants)
+const BC = {m:[120,336,525], pl:[[18488,9993,3526],[22754,12301,4340],[27020,14606,5154],[31286,16914,5967],[35553,19219,6781]]};
+const BL = {m:[504,621,732,843,957,1071], pl:[[22037,17445,14816,11949,7426,2902],[23731,19033,16162,13034,8252,3468],[27121,22204,18856,15208,9902,4596],[31360,25378,21550,17380,11551,5723],[35597,30136,25591,20639,14027,7414]]};
+function bourse(tab,rfr,nk){ const pl=tab.pl[Math.min(Math.max(nk,1),5)-1]; let e=-1; pl.forEach((v,i)=>{ if(rfr<=v) e=i; }); return e<0?0:tab.m[e]; }
+const ZONES = {1:{seul:333,couple:402,pac1:454,pacx:66},2:{seul:290,couple:355,pac1:399,pacx:58},3:{seul:272,couple:330,pac1:371,pacx:53}};
+
+function coefFoyer(adults,n){ let c = adults===2?1.5:1;
+  for(let i=0;i<n;i++) c += i<2 ? ((adults===1&&i===0)?0.5:0.3) : 0.4; return c; }
+function forfaitLog(base,persons){ return persons===1?0.12*base : persons===2?0.16*base*1.5 : 0.165*base*1.8; }
+function bonif(net){ const r=net/P.smicRefPA;
+  if(r<0.5) return 0; if(r<1) return P.bonifMid*(r-0.5)/0.5;
+  if(r<1.15) return P.bonifMid+(P.bonifMax-P.bonifMid)*(r-1)/0.15; return P.bonifMax; }
+function bareme(q){ const t=[[11600,0],[29579,0.11],[84577,0.30],[181917,0.41],[Infinity,0.45]];
+  let tax=0,prev=0; for(const [lim,r] of t){ if(q>prev) tax+=(Math.min(q,lim)-prev)*r; prev=lim; } return tax; }
+function impotMensuel(netImpAnnuel,adults,n,isole){
+  const R = netImpAnnuel*0.9;
+  const parts = adults + [...Array(n)].reduce((s,_,i)=>s+(i<2?0.5:1),0) + (isole&&n?0.5:0);
+  const full = bareme(R/parts)*parts, ref = bareme(R/adults)*adults;
+  const half = (parts-adults)*2;
+  const maxRed = isole&&n ? 4262+(half-2)*1807 : half*1807;
+  let tax = Math.max(full, ref-maxRed);
+  const seuil = adults===2?1483:897;
+  if(tax < seuil/0.4525) tax -= (seuil-0.4525*tax);
+  tax = Math.max(0,tax); if(tax<61) tax=0; return tax/12; }
+function apl(h,n,netImpTot){
+  const z=ZONES[h.zone];
+  const Lmax = n===0 ? (h.adults===2?z.couple:z.seul) : z.pac1+(n-1)*z.pacx;
+  const L=Math.min(h.loyer,Lmax), C=58.08+13.17*n;
+  const P0=Math.max(39,0.085*(L+C));
+  // Taux de participation et abattement recalés sur les résultats d'OpenFisca (octobre 2026)
+  const TP = n===0 ? (h.adults===2?0.41:0.38) : [0.367,0.318,0.292,0.266][Math.min(n,4)-1]-Math.max(0,n-4)*0.01;
+  const R0 = n===0 ? (h.adults===2?7500:5240) : [8820,9012,9370,9720][Math.min(n,4)-1]+Math.max(0,n-4)*350;
+  const Pp = P0 + TP*Math.max(0,netImpTot*12*0.9-R0)/12;
+  const a = L+C-Pp-5; return a<10?0:a; }
+function chequeEnergie(rfr,uc){ const cat = uc<=1?0:uc<2?1:2;
+  for(const [lim,v] of [[5700,[194,240,277]],[6800,[146,176,202]],[7850,[98,113,127]],[11000,[48,63,76]]]) if(rfr/uc<lim) return v[cat];
+  return 0; }
+function noel(persons){ return [0,152.45,228.68,274.41,320.15][Math.min(persons,4)] + Math.max(0,persons-4)*60.98; }
+
+// Auto-entrepreneur : le curseur est le chiffre d'affaires (CA) mensuel.
+// Cotisations = taux × CA ; CAF et impôts retiennent CA − abattement forfaitaire.
+const AE = {services:{taux:0.213,abatt:0.50}, vente:{taux:0.124,abatt:0.71}, liberal:{taux:0.263,abatt:0.34}};
+function fullS(h){ return h.ae ? P.smicNet/(1-AE[h.activite].taux) : P.smicBrut; }
+// Salaire de comparaison : SMIC (ou équivalent), sauf profil de référence au salaire médian (≈ 2 880 € brut, 2 190 € net)
+const MEDIAN_BRUT = 2880;
+function refS(h){ return h.refS || fullS(h); }
+
+function simCore(h,S,are=0){
+  const kids=h.kids.filter(a=>a<20).sort((a,b)=>b-a), n=kids.length, persons=h.adults+n;
+  const isole = h.adults===1 && n>0;
+  const S2 = h.adults===2 ? (h.s2||0) : 0;
+  const ae = h.ae ? AE[h.activite] : null;
+  const net1 = ae ? S*(1-ae.taux) : S*P.ratio, net2=S2*P.ratio, revPro=net1+net2;
+  const revAE = ae ? S*(1-ae.abatt) : 0;           // revenu retenu par la CAF et le fisc pour l'auto-entrepreneur
+  const revCAF = ae ? revAE+net2 : revPro;
+  const pension = h.retraite ? (h.pension||0) : 0;
+  const netImpTot = (ae ? revAE/0.9 + net2 + 0.02849*S2 + pension : revPro + 0.02849*(S+S2) + pension) + are;
+  const Rn = netImpTot*12*0.9;
+  const biact = isole || (S>0&&S2>0);
+
+  // Prestations familiales
+  let af=0, afMaj=0; if(n>=2){ af=0.32+0.41*(n-2); kids.forEach((a,i)=>{ if(a>=14 && !(n===2&&i===0)) afMaj+=0.16*P.bmaf; }); af=af*P.bmaf+afMaj; }
+  let cf=0; const k3=kids.filter(a=>a<21);
+  if(k3.length>=3 && k3.every(a=>a>=3)){ const pm=(biact?28400:23200)+3870*(k3.length-3);
+    cf = Rn<=pm ? 0.6248*P.bmaf : Rn<=2*pm ? 0.4165*P.bmaf : 0; }
+  let asf = isole && h.asf ? P.asf*n : 0;
+  let ab=0; if(kids.some(a=>a<3)){ const pp=(biact?42000:32000)+6500*(n-1);
+    ab = Rn<=pp ? 0.39934*P.bmaf : Rn<=pp*1.19 ? 0.19967*P.bmaf : 0; }
+  let ars=0; const kArs=kids.filter(a=>a>=6&&a<=18);
+  if(kArs.length){ const tot=kArs.reduce((s,a)=>s+(a<=10?P.ars[0]:a<=14?P.ars[1]:P.ars[2]),0);
+    const pl=28000+6460*(kids.length-1); ars=Math.max(0,tot-Math.max(0,Rn-pl)); }
+  // Minimum vieillesse (ASPA) : les revenus d'activité ne comptent qu'au-delà d'un abattement
+  let aspa=0; if(h.retraite && h.age>=65){ const plaf=h.adults===2?1620.18:1043.59, abt=(h.adults===2?2734.55:1640.73)/3;
+    aspa=Math.max(0, plaf-(pension+Math.max(0,revPro-abt))); }
+  // AAH : salaire compté après abattement (80 % jusqu'à 30 % du SMIC brut, 40 % au-delà)
+  let aah=0, mva=0, aahPro=0;
+  if(h.aah){ const t=0.3*P.smicBrut, base=0.2*Math.min(net1,t)+0.6*Math.max(0,net1-t);
+    aah=Math.max(0,1041.59-base);
+    if(S>=29*12.31) aahPro=aah; }  // au-delà de 29 h de SMIC, l'AAH compte comme un revenu d'activité pour la prime d'activité
+  let famRes = af+cf+asf+ab+pension+aspa+aah+are;
+  // Pour le RSA et la prime d'activité, la CAF ne compte ni les majorations pour âge des allocations familiales,
+  // ni la part majorée du complément familial, ni la hausse de 2023 de l'ASF (règles vérifiées avec OpenFisca)
+  const famResRSA = () => (af-afMaj) + Math.min(cf,0.4165*P.bmaf) + asf*0.533 + ab + pension + aspa + aah + are;
+
+  // Allocation CEJ : cumul intégral jusqu'à 300 € net, puis dégressive jusqu'à 80 % du SMIC
+  let cej=0; if(h.cej && h.age<26){ const lim=0.8*P.smicNet;
+    cej = net1<=300 ? P.cej : Math.max(0,P.cej*(1-(net1-300)/(lim-300))); }
+
+  // Logement
+  // Étudiant boursier : l'APL retient au moins un forfait de ressources (≈ 6 300 € par an)
+  let aplV = apl(h,n, h.etudiant ? Math.max(netImpTot, 6300/12/0.9) : netImpTot);
+
+  // RSA
+  const maj = isole && h.majore;
+  const mfR = maj ? P.rsaBase*(1.28412+0.42804*n) : P.rsaBase*coefFoyer(h.adults,n);
+  const flR = aplV>0 ? forfaitLog(P.rsaBase,persons) : 0;
+  let rsa = ((h.age<25 && n===0) || h.retraite || h.etudiant) ? 0 : Math.max(0, mfR-(revCAF+famResRSA()+flR)); if(rsa<6) rsa=0;
+
+  // Prime d'activité
+  const mfP = maj ? P.paBase*(1.28412+0.42804*n) : P.paBase*coefFoyer(h.adults,n);
+  const flP = aplV>0 ? forfaitLog(P.paBase,persons) : 0;
+  let pa = 0;
+  if(revCAF>0){ pa = mfP + 0.5985*(revCAF+aahPro) + bonif(ae?revAE:net1)+bonif(net2) - Math.max(mfP, revCAF+famResRSA()+flP+rsa+cej); if(pa<15) pa=0; }
+  if(h.etudiant && net1 < 0.78*P.smicNet) pa=0;   // étudiant : prime d'activité seulement à partir de 0,78 SMIC net
+
+  // Impôt
+  // Salaires des étudiants de moins de 26 ans exonérés d'impôt jusqu'à 3 SMIC mensuels par an
+  let ir = impotMensuel(Math.max(0, netImpTot*12 - (h.etudiant&&h.age<26 ? Math.min((revPro+0.02849*S)*12, 3*P.smicBrut) : 0)),h.adults,n,isole);
+
+  // Substitution par les résultats OpenFisca quand le foyer n'a pas été modifié
+  const ofr = ofLookup(h,S,are), keys = ofr ? (keysFor(h) || Object.keys(ofr).concat(["rsa","ppa","aide_logement","af","cf","asf","paje_base","aspa","ars","ir","aah","energie","mva"])) : [];
+  const has = k => keys.includes(k), ofv = k => ofr[k]||0;
+  if(ofr){
+    if(has("rsa")) rsa=ofv("rsa"); if(has("ppa")) pa=ofv("ppa"); if(has("aide_logement")) aplV=ofv("aide_logement");
+    if(has("af")) af=ofv("af"); if(has("cf")) cf=ofv("cf"); if(has("asf")) asf=ofv("asf"); if(has("paje_base")) ab=ofv("paje_base");
+    if(has("aspa")) aspa=ofv("aspa"); if(has("ars")) ars=ofv("ars"); if(has("ir")) ir=Math.max(0,ofv("ir")); if(h.aah && has("aah")) aah=ofv("aah");
+    famRes = af+cf+asf+ab+pension+aspa+aah+are; afMaj=0;
+  }
+
+  // Santé
+  const ucC = coefFoyer(h.adults,0) + (n>0?(h.adults===1?0.5:0.3):0) + (n>1?0.3:0) + Math.max(0,n-2)*0.4;
+  const plafCSS = 10250*ucC, resCSS = 12*(revCAF+famRes+(aplV>0?forfaitLog(P.rsaBase,persons):0));
+  const partAge = h.age<30?8:h.age<50?14:h.age<60?21:25;
+  let sante, santeLab;
+  if(rsa>0 || resCSS<=plafCSS){ sante=0; santeLab="CSS gratuite"; }
+  else if(resCSS<=plafCSS*1.35){ sante=h.adults*partAge+n*8; santeLab="CSS avec participation"; }
+  else if((S>0&&!ae)||S2>0){ sante=persons>1?75:35; santeLab="Mutuelle d'entreprise"; }
+  else { sante=h.adults*(h.retraite?100:60)+n*25; santeLab=h.retraite?"Mutuelle senior":"Mutuelle individuelle"; }
+  // Reste à charge : franchises médicales et participation de 2 € par consultation (plafonds 50 € + 50 € par an et par adulte).
+  // La CSS en exonère ; les mineurs aussi. Environ 6 € par mois et par adulte, 8,33 € (plafond atteint) en cas de maladie chronique.
+  const rac = santeLab.startsWith("CSS") ? 0 : h.adults*6 + (h.ald?2.33:0);
+  // Dépassements d'honoraires (spécialistes en secteur 2) après remboursement de la mutuelle : interdits avec la CSS.
+  // ≈ 2 € par mois et par adulte, 6 € en cas de maladie chronique, 1 € par enfant ; un peu plus avec une mutuelle individuelle.
+  const dep = santeLab.startsWith("CSS") ? 0 : (h.adults*2 + (h.ald?4:0) + n) * (santeLab==="Mutuelle individuelle"?1.5:1);
+
+  // Avantages en nature
+  const uc = 1+(persons>=2?0.5:0)+0.3*Math.max(0,persons-2);
+  let energie = (ofr && has("energie")) ? ofv("energie")/12 : chequeEnergie(Rn,uc)/12;
+  if(OPTS.nonRecours){ rsa*=RECOURS.rsa; pa*=RECOURS.pa; aspa*=RECOURS.aspa; energie*=RECOURS.energie; }
+  const noelM = rsa>0 ? noel(persons)/12 : 0;
+  const ruc = (revPro+rsa+pa+famRes)/uc;
+  const facT = (rsa>0 || h.etudiant) ? 1 : Math.min(1,Math.max(0,(1300-ruc)/500));
+  const tarifs = h.tarifs*facT;
+
+  // Frais liés au travail
+  const frac=Math.min(1,S/fullS(h)), w=S>0?0.4+0.6*frac:0;
+  const gardeOn = h.adults===1 || S2>0;
+  // Transport : abonnement remboursé à 50 % par l'employeur, ou voiture au kilomètre (21 jours par mois à temps plein)
+  const kmMois = 2*(h.km||0)*21;
+  const fraisTransport = S<=0 ? 0 : h.mode==="tc" ? (h.abo||0)*0.5 : h.mode==="vp" ? kmMois*KM.vp*w : h.mode==="va" ? kmMois*KM.va*w : 0;
+  const fraisRepas = h.repas*w;
+  const dbl = h.fraisDouble && S2>0 && S>0 ? 2 : 1;   // les deux adultes vont travailler
+  const fraisPro = ae ? (h.fraisPro||0)*w : 0;    // matériel, téléphone, assurance, CFE
+  const fraisTrajet = (fraisTransport+fraisRepas)*dbl+fraisPro, fraisGarde=gardeOn?h.garde*w:0;
+
+  // Bourses : collège de 11 à 14 ans, lycée de 15 à 18 ans
+  const bourses = kids.reduce((t,a)=>t+(a>=11&&a<=14?bourse(BC,Rn,n):a>=15&&a<=18?bourse(BL,Rn,n):0),0)/12;
+
+  // Aide alimentaire (Restos du cœur, épicerie sociale) : ≈ 35 € par personne et par mois,
+  // pleine sous 10 € de reste à vivre par jour et par unité de consommation, nulle au-delà de 20 €
+  const monet = revPro+famRes+cej+rsa+pa+aplV+ars/12+bourses;
+  const rav = (monet-h.loyer-fraisTrajet-fraisGarde-sante-rac-dep-ir)/uc/30;
+  const alim = OPTS.alim ? 35*persons*Math.min(1,Math.max(0,(20-rav)/10)) : 0;
+
+  // Majoration pour la vie autonome : AAH sans salaire et avec aide au logement
+  if(h.aah && aah>0 && S===0 && aplV>0) mva=104.77;
+  if(ofr && h.aah) mva=ofv("mva");
+  const crous = h.etudiant ? (h.bourseCrous||0)/12 : 0;   // bourse CROUS (10 mensualités), ramenée au mois, non réduite par un job
+  const aides = crous+aah+mva+aspa+cej+rsa+pa+aplV+af+cf+asf+ab+ars/12+bourses+noelM+energie+tarifs+alim;
+  const rd = revPro+pension+are+aides-ir-sante-rac-dep-fraisTrajet-fraisGarde;
+  return {S,of:!!ofr,are,net1,net2,revPro,pension,aspa,aah,mva,crous,cej,rsa,pa,apl:aplV,af,cf,asf,ab,ars:ars/12,bourses,alim,noel:noelM,energie,tarifs,ir,sante,rac,dep,santeLab,fraisTrajet,fraisTransport:fraisTransport*dbl,fraisRepas:fraisRepas*dbl,fraisPro,kmMois,fraisGarde,aides,rd};
+}
+
+// Allocation chômage (ARE) nette mensuelle après un emploi au salaire brut S
+function areNet(S){ return Math.min(0.75*S, Math.max(0.404*S+13.18*30.4, 0.57*S))*0.95; }
+// Emploi précaire : moyenne sur l'année de m mois travaillés, puis chômage indemnisé
+// (0,75 jour d'indemnisation par jour travaillé, dès 6 mois de travail), puis retour aux aides
+function simulate(h,S){
+  const a = simCore(h,S), m = OPTS.mois;
+  if(S<=0 || m>=12) return a;
+  const moisAre = (m>=6 && !h.ae && !h.etudiant) ? Math.min(12-m, 0.75*m) : 0, moisSans = 12-m-moisAre;
+  const c = moisAre ? simCore(h,0,areNet(S)) : null, z = simCore(h,0), out = {...a};
+  for(const k in a) if(typeof a[k]==="number") out[k] = (a[k]*m + (c?c[k]*moisAre:0) + z[k]*moisSans)/12;
+  out.moisTrav=m; out.moisAre=moisAre; out.moisSans=moisSans; return out;
+}
+
+function metrics(h){
+  // Retraité : vie sans carrière (ASPA) contre retraite après une carrière au salaire médian
+  if(h.compareRetraite){ const b=simulate({...h,pension:0},0), f=simulate({...h,pension:h.pensionMed},0), gain=f.rd-b.rd;
+    return { base:b, full:f, gain, gainH:gain/P.heures, tme:1-gain/h.pensionMed, seuilEq:0, s20:null, remplace:b.aides/P.ratio }; }
+  const F1=refS(h), b=simulate(h.compareCouple?{...h,s2:0}:h,0), f=simulate(h,F1), step=10, max=2.5*fullS(h);
+  let lastBelow=-1, s20=null;
+  for(let S=step;S<=max;S+=step){ const r=simulate(h,S).rd;
+    if(r<=b.rd) lastBelow=S; if(s20===null && r>=b.rd*1.2) s20=S; }
+  const gain=f.rd-b.rd;
+  return { base:b, full:f, gain, gainH:gain/P.heures, tme:1-gain/(h.compareCouple?f.net1+f.net2:f.net1),
+    seuilEq: lastBelow<0?0:lastBelow+step, s20, remplace:b.aides/P.ratio };
+}
+</script>
+
+<script>
+const PERSONAS = [
+ {id:"camille",nom:"Camille",tag:"Salariée typique, salaire médian",refS:2880,desc:"Camille, 38 ans, vit seule et travaille comme technicienne dans une entreprise de taille moyenne. Elle gagne le salaire médian du privé : environ 2 880 € brut, soit 2 190 € net par mois. La moitié des salariés gagnent moins, l'autre moitié plus. Elle loue un T2 à 650 € et va au travail en voiture (15 km), comme la majorité des actifs. C'est le profil de référence : la plupart des Français sont salariés, et payés au-dessus du SMIC.",
+  adults:1,age:38,kids:[],majore:false,asf:false,zone:2,loyer:650,mode:"vp",km:15,abo:0,repas:60,garde:0,tarifs:30,s2:0},
+ {id:"bernard",nom:"Famille Bernard",tag:"Couple salarié, 2 enfants, deux salaires médians",refS:2880,compareCouple:true,fraisDouble:true,desc:"Nicolas et Émilie, 40 ans, ont deux enfants de 6 et 10 ans et louent un T4 à 950 € près de Nantes. Tous deux gagnent le salaire médian (environ 2 880 € brut, 2 190 € net chacun). Chacun va au travail en voiture (15 km). Les enfants vont au périscolaire et au centre de loisirs pendant les vacances. On compare avec la situation où aucun des deux ne travaillerait. Le curseur fait varier le salaire de Nicolas, celui d'Émilie restant au salaire médian.",
+  adults:2,age:40,kids:[6,10],majore:false,asf:false,zone:2,loyer:950,mode:"vp",km:15,abo:0,repas:60,garde:150,tarifs:60,s2:2880},
+ {id:"karim",nom:"Karim",tag:"Seul, sans enfant",desc:"Karim, 30 ans, vit seul dans un T1 du privé en périphérie lyonnaise. Sans emploi, il bénéficie du tarif solidaire des transports en commun.",
+  adults:1,age:30,kids:[],majore:false,asf:false,zone:2,loyer:520,mode:"tc",km:8,abo:73,repas:60,garde:0,tarifs:30,s2:0},
+ {id:"sandrine",nom:"Sandrine",tag:"Mère seule, 2 enfants",desc:"Sandrine, 41 ans, élève seule ses enfants de 8 et 13 ans dans un HLM près de Saint-Étienne. Le père ne verse pas de pension. Pour travailler, il lui faut une voiture et le périscolaire.",
+  adults:1,age:41,kids:[8,13],majore:false,asf:true,zone:2,loyer:470,mode:"vp",km:20,abo:0,repas:50,garde:90,tarifs:70,s2:0},
+ {id:"moreau",nom:"Famille Moreau",tag:"Couple, 2 enfants, un revenu",desc:"Thomas et Léa, 34 ans, enfants de 2 et 6 ans, logement privé à Nantes. Léa reste au foyer : on fait varier le salaire de Thomas. Pas de frais de garde puisque Léa garde le plus jeune.",
+  adults:2,age:34,kids:[2,6],majore:false,asf:false,zone:2,loyer:780,mode:"vp",km:15,abo:0,repas:60,garde:0,tarifs:60,s2:0},
+ {id:"diallo",nom:"Famille Diallo",tag:"Couple, 4 enfants",desc:"Mamadou et Awa, 43 ans, quatre enfants de 4 à 15 ans, HLM en Seine-Saint-Denis. On fait varier le salaire de Mamadou, Awa ne travaille pas. Le Navigo est remboursé à moitié par l'employeur.",
+  adults:2,age:43,kids:[4,7,11,15],majore:false,asf:false,zone:1,loyer:690,mode:"tc",km:12,abo:91,repas:60,garde:0,tarifs:120,s2:0},
+ {id:"nadia",nom:"Nadia",tag:"Mère seule, bébé",desc:"Nadia, 26 ans, mère d'un bébé d'un an, studio du privé à Paris. Elle touche le RSA majoré. Si elle travaille, son fils va à la crèche (reste à charge estimé).",
+  adults:1,age:26,kids:[1],majore:true,asf:true,zone:1,loyer:750,mode:"tc",km:6,abo:91,repas:60,garde:180,tarifs:80,s2:0},
+ {id:"gerard",nom:"Gérard",tag:"Seul, rural, 57 ans",desc:"Gérard, 57 ans, vit seul dans la Creuse. Aucun transport en commun : travailler impose 40 km de trajet quotidien en voiture.",
+  adults:1,age:57,kids:[],majore:false,asf:false,zone:3,loyer:380,mode:"va",km:20,abo:0,repas:70,garde:0,tarifs:10,s2:0},
+ {id:"lefevre",nom:"Famille Lefèvre",tag:"Second salaire du couple",desc:"Julie travaille déjà au SMIC. Marc, 37 ans, se demande si reprendre un emploi vaut le coup. Leur fils a 10 ans. Il faudra une deuxième voiture et le périscolaire.",
+  adults:2,age:37,kids:[10],majore:false,asf:false,zone:2,loyer:650,mode:"va",km:12,abo:0,repas:60,garde:80,tarifs:20,s2:1867},
+ {id:"lucas",nom:"Lucas",tag:"Jeune de 22 ans",desc:"Lucas, 22 ans, a quitté le domicile de ses parents pour un studio à Rennes. Sans enfant, il n'a pas droit au RSA. Il suit un Contrat d'engagement jeune à la Mission locale (15 à 20 heures d'activités par semaine), limité à 12 mois. Décochez le CEJ pour voir sa situation une fois le contrat terminé.",
+  adults:1,age:22,kids:[],majore:false,asf:false,cej:true,zone:2,loyer:430,mode:"tc",km:5,abo:32,repas:50,garde:0,tarifs:15,s2:0},
+ {id:"monique",nom:"Monique",tag:"Retraitée : aucune carrière ou salaire médian",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
+  adults:1,age:67,kids:[],majore:false,asf:false,retraite:true,pension:0,zone:3,loyer:420,mode:"pied",km:0,abo:0,repas:0,garde:0,tarifs:15,s2:0},
+ {id:"sophie",nom:"Sophie",tag:"Handicap, AAH",desc:"Sophie, 45 ans, vit seule à Toulouse. Atteinte de sclérose en plaques, elle a un taux d'incapacité reconnu de 80 % et touche l'allocation aux adultes handicapés (AAH). Elle pourrait travailler à temps partiel dans une entreprise adaptée à son handicap. À la reprise, son salaire n'est pas compté pendant 6 mois : le calcul montre la situation ensuite.",
+  adults:1,age:45,kids:[],majore:false,asf:false,aah:true,ald:true,zone:2,loyer:480,mode:"tc",km:10,abo:50,repas:50,garde:0,tarifs:20,s2:0},
+ {id:"yanis",nom:"Yanis",tag:"Auto-entrepreneur",desc:"Yanis, 31 ans, vit seul à Bordeaux. Il est livreur à vélo en micro-entreprise : pas de salaire, mais un chiffre d'affaires sur lequel il paie 21,3 % de cotisations. Il loue son vélo électrique et paie téléphone, assurance et CFE (environ 120 € par mois). Pas de congés payés, pas de mutuelle d'entreprise, pas de chômage. « Au SMIC » signifie ici un chiffre d'affaires qui lui laisse autant qu'un SMIC net après cotisations, soit environ 1 878 €.",
+  adults:1,age:31,kids:[],majore:false,asf:false,ae:true,activite:"services",fraisPro:120,zone:2,loyer:510,mode:"pied",km:0,abo:0,repas:40,garde:0,tarifs:25,s2:0}
+];
+let cur = PERSONAS[0];
+const eur = v => Math.round(v).toLocaleString("fr-FR")+" €";
+const sgn = v => (Math.round(v)>=0?"+":"−")+Math.abs(Math.round(v)).toLocaleString("fr-FR")+" €";
+const dec = v => v.toLocaleString("fr-FR",{minimumFractionDigits:1,maximumFractionDigits:1});
+const kept10 = m => Math.max(0,(1-m.tme)*10);
+// Dépenses courantes par défaut : énergie, eau, téléphone, internet, assurance habitation, charges locatives
+function courantes(h){ return h.courantes ?? (220 + 80*(h.adults-1) + 45*h.kids.length); }
+// Budget alimentation minimal
+function alimBudget(h){ return h.alimBudget ?? (200*h.adults + 130*h.kids.length); }
+const resteAVivre = (h,x) => x.rd - h.loyer - courantes(h) - alimBudget(h);
+const parJour = (h,v) => v/30/(h.adults+h.kids.length);
+
+function renderTop(){
+  const all=PERSONAS.map(p=>({p,m:metrics(p)}));
+  const agg = all.filter(x=>!x.p.compareRetraite && !x.p.refS && !x.p.custom);   // le retraité suit une autre comparaison
+  const avg = agg.reduce((s,x)=>s+kept10(x.m),0)/agg.length;
+  const gains = agg.map(x=>x.m.gain);
+  document.getElementById("answer").innerHTML =
+    `Travailler rapporte toujours plus que les aides. Mais sur <b>10 €</b> de salaire, il ne reste en moyenne que <b>${dec(avg)} €</b> en plus dans la poche.`;
+  const ref = all.find(x=>x.p.refS);
+  if(ref) document.getElementById("answer").innerHTML += `<span class="ref">Mais ces cas sont des situations particulières. Le salarié typique, au salaire médian, a un revenu disponible de <b>${eur(ref.m.full.rd)}</b> par mois contre <b>${eur(ref.m.base.rd)}</b> s'il vivait des aides, soit <b>${dec(ref.m.full.rd/ref.m.base.rd)} fois plus</b>.</span>`;
+  const sorted=[...agg].sort((a,b)=>kept10(a.m)-kept10(b.m));
+  const low=sorted.slice(0,3).map(x=>x.p.nom).join(", ");
+  const n=Math.round(avg);
+  document.getElementById("facts").innerHTML = `
+    <div class="fact"><span class="eyebrow">Au SMIC temps plein</span><span class="big k-gain">${sgn(Math.min(...gains))} à ${sgn(Math.max(...gains)).slice(1)}</span><p>de plus par mois qu'en vivant des aides, selon le foyer.</p></div>
+    <div class="fact"><span class="eyebrow">Sur 10 € de salaire</span><div class="coins">${[...Array(10)].map((_,i)=>`<i class="${i<n?"kept":"lost"}"></i>`).join("")}</div><p>environ ${n} € restent en plus, le reste compense les aides perdues et les frais du travail.</p></div>
+    <div class="fact"><span class="eyebrow">Les moins gagnants</span><span class="big k-aid" style="font-size:1.5rem">${low}</span><p>La voiture obligatoire ou la garde d'enfants mangent une grande partie du salaire.</p></div>`;
+  const sortedRows=[...all].sort((a,b)=>a.m.gain-b.m.gain);   // du plus petit au plus grand écart
+  const rv=sortedRows.map(({p,m})=>[resteAVivre(p,m.base),resteAVivre(p,m.full)]);
+  const max=Math.max(...all.map(x=>x.m.full.rd), ...all.map(x=>x.m.base.rd));   // même échelle pour les deux jauges
+  const W=v=>Math.max(0,v)/max*62;
+  const rows=document.getElementById("rows"); rows.innerHTML="";
+  const mres=document.getElementById("m-result"); mres.innerHTML=""; mres.hidden=true;
+  document.getElementById("m-legend").hidden = !all.some(x=>x.p.custom);
+  sortedRows.forEach(({p,m},i)=>{ const [r0,r1]=rv[i];
+    const b=document.createElement("button"); b.className="row"; b.type="button";
+    const ref=p.custom?(p.compareRetraite?`retraite de ${eur(p.pensionMed)} net`:`${p.ae?"chiffre d'affaires":"salaire"} de ${eur(refS(p))} brut`):p.compareRetraite?"retraite après une carrière au salaire médian":p.ae?"chiffre d'affaires équivalent au SMIC":p.compareCouple?"deux salaires médians":p.refS?"salaire médian":"SMIC temps plein";
+    b.innerHTML=`<div class="name"><b>${p.nom}</b><span>${p.tag}</span><span class="cmp"><b class="${m.gain<0?"k-loss":"k-gain"}" style="font-family:var(--f-mono);font-size:.8rem">écart ${sgn(m.gain)} / mois</b><br>salarié : ${ref}${OPTS.mois<12&&!p.compareRetraite?` · ${OPTS.mois} mois par an`:""}</span></div>
+      <div class="bars"><span class="glab">Revenu disponible</span>
+        <div class="bar"><span style="width:${W(m.base.rd)}%;background:var(--aid)"></span>${eur(m.base.rd)}</div>
+        <div class="bar"><span style="width:${W(m.full.rd)}%;background:var(--work)"></span>${eur(m.full.rd)}</div>
+      </div>
+      <div class="bars"><span class="glab">Reste à vivre</span>
+        <div class="bar"><span style="width:${W(r0)}%;background:var(--aid)"></span><em style="font-style:normal" class="${r0<0?"k-loss":""}">${eur(r0)}</em></div>
+        <div class="bar"><span style="width:${W(r1)}%;background:var(--work)"></span><em style="font-style:normal" class="${r1<0?"k-loss":""}">${eur(r1)}</em></div>
+      </div>`;
+    if(p.refS) b.style.background="var(--soft)";
+    if(p.custom) b.style.boxShadow="inset 4px 0 0 var(--work)";
+    b.onclick=()=>{ select(p.id); document.getElementById("detail-sec").scrollIntoView({behavior:"smooth"}); };
+    rows.appendChild(b);
+    if(p.custom){ const c=b.cloneNode(true); c.onclick=b.onclick; c.style.boxShadow="none"; mres.appendChild(c); mres.hidden=false; }
+  });
+}
+
+// Profil personnalisé : construit à partir du formulaire « Créer mon profil »
+const ZONE_LAB = {1:"Paris et petite couronne",2:"grande ville",3:"petite ville ou rural"};
+function readMonProfil(){
+  const v=id=>document.getElementById("m-"+id).value, num=id=>Math.max(0,+v(id)||0);
+  const raw=v("kids").trim(), kids = raw ? raw.split(/[,;\s]+/).filter(Boolean).map(Number).filter(x=>!isNaN(x)&&x>=0&&x<25) : [];
+  const adults=+v("adults"), situ=v("situ"), sal=num("sal"), s2=adults===2?num("s2"):0, age=+v("age")||35;
+  const h = {id:"perso", nom:"Mon profil", tag:"Profil personnalisé", custom:true, edited:true,
+    adults, age, kids, zone:+v("zone"), loyer:num("loyer"), mode:v("mode"), km:num("km"), abo:+v("zone")===1?91:60,
+    repas:60, garde:num("garde"), tarifs:30, s2,
+    majore: adults===1 && kids.some(a=>a<3), asf: situ==="asf", aah: situ==="aah", ald: situ==="aah",
+    ae: situ==="ae", activite:"services", fraisPro: situ==="ae"?100:0, refS: sal||P.smicBrut};
+  if(situ==="retraite"){ Object.assign(h,{retraite:true, compareRetraite:true, pension:0, pensionMed:num("pension"), age:Math.max(age,65)}); }
+  if(adults===2 && s2>0){ h.compareCouple=true; h.fraisDouble=true; }
+  const who = adults===1?"Personne seule":"Couple", enf = kids.length?`, ${kids.length} enfant${kids.length>1?"s":""} (${kids.join(", ")} ans)`:"";
+  h.desc = h.compareRetraite
+    ? `${who}${enf}, ${h.age} ans, loyer de ${eur(h.loyer)} (${ZONE_LAB[h.zone]}). Comparaison entre une vie sans carrière (minimum vieillesse) et votre retraite de ${eur(h.pensionMed)} net.`
+    : `${who}${enf}, ${age} ans, loyer de ${eur(h.loyer)} (${ZONE_LAB[h.zone]}). Comparaison entre aucun revenu d'activité et ${h.ae?"un chiffre d'affaires":"un salaire"} de ${eur(sal)} brut${h.compareCouple?`, avec ${eur(s2)} brut pour le conjoint`:""}.`;
+  return h;
+}
+function addMonProfil(h, go){
+  const i=PERSONAS.findIndex(p=>p.id==="perso"); if(i>=0) PERSONAS.splice(i,1);
+  PERSONAS.unshift(h);
+  try{ localStorage.setItem("monProfil", JSON.stringify(h)); }catch(e){}
+  renderTop(); select("perso"); scheduleOF(h);
+  if(go) document.getElementById("m-result").scrollIntoView({behavior:"smooth",block:"center"});
+}
+function syncMform(){
+  document.getElementById("m-s2-lab").hidden = document.getElementById("m-adults").value!=="2";
+  document.getElementById("m-pension-lab").hidden = document.getElementById("m-situ").value!=="retraite";
+}
+document.getElementById("mform").addEventListener("input",syncMform);
+document.getElementById("mform").addEventListener("submit",e=>{ e.preventDefault(); addMonProfil(readMonProfil(), true); });
+document.getElementById("m-go").addEventListener("click",()=>addMonProfil(readMonProfil(), true));
+
+function renderTabs(){
+  const t=document.getElementById("tabs"); t.innerHTML="";
+  PERSONAS.forEach(p=>{ const b=document.createElement("button"); b.className="tab"; b.type="button"; b.role="tab";
+    b.textContent=p.nom; b.setAttribute("aria-selected",p===cur); b.onclick=()=>select(p.id); t.appendChild(b); });
+}
+const PRESETS=[["Sans emploi",0],["Mi-temps",0.5],["SMIC",1],["Salaire médian","med"],["2 SMIC",2]];
+function renderPresets(S){
+  document.getElementById("presets").innerHTML = PRESETS.map(([l,k])=>{
+    if(k==="med"){ if(cur.ae) return ""; k=MEDIAN_BRUT/P.smicBrut; }
+    const v=Math.round(k*fullS(cur)/10)*10; return `<button type="button" data-v="${v}" class="${Math.abs(v-S)<10?"on":""}">${l}</button>`; }).join("");
+}
+document.getElementById("presets").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  document.getElementById("sal").value=b.dataset.v; update(); });
+
+const F = id=>document.getElementById("f-"+id);
+function fillForm(){
+  F("adults").value=cur.adults; F("age").value=cur.age; F("kids").value=cur.kids.join(", ");
+  F("majore").checked=cur.majore; F("asf").checked=cur.asf; F("cej").checked=!!cur.cej; F("aah").checked=!!cur.aah; F("ald").checked=!!cur.ald; F("ae").checked=!!cur.ae; F("activite").value=cur.activite||"services"; F("fraisPro").value=cur.fraisPro||0; F("zone").value=cur.zone;
+  ["loyer","km","abo","repas","garde","tarifs","s2"].forEach(k=>F(k).value=cur[k]||0); F("mode").value=cur.mode; F("courantes").value=Math.round(courantes(cur)); F("alimBudget").value=Math.round(alimBudget(cur)); F("pension").value=(cur.compareRetraite?cur.pensionMed:cur.pension)||0;
+  F("s2").disabled = cur.adults!==2;
+}
+function readForm(){
+  cur.edited=true;
+  cur.adults=+F("adults").value; cur.age=+F("age").value||30;
+  const raw=F("kids").value.trim();
+  cur.kids = raw ? raw.split(/[,;\s]+/).filter(Boolean).map(Number).filter(x=>!isNaN(x)&&x>=0&&x<25) : [];
+  cur.majore=F("majore").checked; cur.asf=F("asf").checked; cur.cej=F("cej").checked; cur.aah=F("aah").checked; cur.ald=F("ald").checked; cur.ae=F("ae").checked; cur.activite=F("activite").value; cur.fraisPro=Math.max(0,+F("fraisPro").value||0); setSliderMax(); cur.zone=+F("zone").value;
+  ["loyer","km","abo","repas","garde","tarifs","s2"].forEach(k=>cur[k]=Math.max(0,+F(k).value||0)); cur.mode=F("mode").value; cur.courantes=Math.max(0,+F("courantes").value||0); cur.alimBudget=Math.max(0,+F("alimBudget").value||0);
+  const pv=Math.max(0,+F("pension").value||0);
+  if(cur.compareRetraite) cur.pensionMed=pv; else { cur.pension=pv; cur.retraite = pv>0; }
+  F("s2").disabled = cur.adults!==2;
+  scheduleOF(cur);
+}
+function setSliderMax(){ document.getElementById("sal").max=Math.round(Math.max(2.5*fullS(cur),1.2*(cur.refS||0))); }
+function select(id){ cur=PERSONAS.find(p=>p.id===id); setSliderMax(); document.getElementById("sal").value=Math.round(refS(cur)/10)*10; renderTabs(); fillForm(); update(); }
+
+function update(){
+  const R=!!cur.compareRetraite;
+  ["presets"].forEach(id=>document.getElementById(id).hidden=R);
+  document.querySelector(".slider").hidden=R; document.querySelector(".chartbox").hidden=R;
+  const m=metrics(cur), S=+document.getElementById("sal").value, x=R?m.full:simulate(cur,S), b=m.base;
+  const netTot = cur.compareCouple ? x.net1+x.net2 : x.net1;
+  const d=x.rd-b.rd, heures=Math.min(1,S/fullS(cur))*P.heures;
+  document.getElementById("salout").textContent= cur.ae ? `${eur(S)} de chiffre d'affaires, soit ${eur(x.net1)} après cotisations` : `${eur(S)} brut, soit ${eur(S*P.ratio)} net`;
+  document.getElementById("sal-lab").textContent = cur.ae ? "Chiffre d'affaires" : "Salaire brut";
+  renderPresets(S);
+  let txt;
+  if(S===0) txt=`Sans emploi, ${cur.nom} a un revenu disponible de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Choisissez un salaire pour comparer.`;
+  else if(d<0) txt=`Avec ce salaire, ${cur.nom} aurait <b class="k-loss">${eur(-d)} de moins</b> qu'en ne travaillant pas : les frais du travail dépassent ce que le salaire rapporte en plus.`;
+  else txt=`Sans emploi, ${cur.nom} a un revenu disponible de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Avec ce salaire, <b class="k-work">${eur(x.rd)}</b>. Travailler lui rapporte <b class="k-gain">${eur(d)} de plus</b>, soit <b>${dec(d/netTot*10)} € sur 10 €</b> ${cur.ae?"de revenu après cotisations":"de salaire net"}${heures?`, environ ${dec(d/heures)} € par heure travaillée`:""}.`;
+  if(R) txt=`Sans avoir travaillé, le revenu disponible de ${cur.nom} serait de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Après une carrière au salaire médian, <b class="k-work">${eur(x.rd)}</b>. Quarante-trois ans de travail lui rapportent <b class="k-gain">${eur(x.rd-b.rd)} de plus par mois</b> à la retraite : sur 10 € de pension, elle garde <b>${dec(kept10(m))} €</b> de plus que sans carrière.`;
+  if(S>0||R){ const rb=resteAVivre(cur,b), rx=resteAVivre(cur,x); txt+=` Une fois le loyer, les dépenses courantes et l'alimentation payés, le reste à vivre passe de <b class="k-aid">${eur(rb)}</b> à <b class="k-work">${eur(rx)}</b> par mois, soit ${dec(parJour(cur,rb))} € puis ${dec(parJour(cur,rx))} € par jour et par personne.`; }
+  if(x.moisTrav) txt+=` <b>Emploi précaire :</b> moyenne sur l'année de ${x.moisTrav} mois de travail, ${dec(x.moisAre)} mois de chômage indemnisé et ${dec(x.moisSans)} mois sans revenu d'activité.`;
+  if(cur.custom) txt = txt.replace("Mon profil a un","vous avez un").replace("Mon profil aurait","vous auriez").replace("lui rapporte","vous rapporte").replace("le revenu disponible de Mon profil serait","votre revenu disponible serait").replace("il resterait à Mon profil","il vous resterait").replace("elle garde","vous gardez").replace("lui rapportent","vous rapportent");
+  document.getElementById("story").innerHTML=`<span class="who">${cur.desc}</span>${txt}`;
+  const st=OFSTATE[cur.id];
+  document.getElementById("src").innerHTML = (LIVE_OF && st==="loading") ? `<span class="muted">● Calcul OpenFisca en cours…</span>` : (LIVE_OF && st==="error" && !(x.of||b.of)) ? `<span class="k-aid">● OpenFisca ne répond pas : modèle approché, écart possible de quelques dizaines d'euros</span>` : (x.of||b.of) ? `<span class="k-gain">● Aides et impôt calculés avec OpenFisca, le moteur officiel</span>` : `<span class="k-aid">● Modèle approché${cur.custom?" (profil personnalisé)":cur.edited?" (foyer modifié)":""} : écart possible de quelques dizaines d'euros</span>`;
+  if(!R) drawChart(m,S);
+
+  const aides=[["Bourse étudiante CROUS (÷12)",x=>x.crous],["Allocation adulte handicapé (AAH)",x=>x.aah],["Majoration vie autonome",x=>x.mva],["Minimum vieillesse (ASPA)",x=>x.aspa],["RSA",x=>x.rsa],["Allocation jeune (CEJ)",x=>x.cej],["Prime d'activité",x=>x.pa],["Aide au logement",x=>x.apl],
+    ["Allocations familiales",x=>x.af+x.cf+x.ab],["Pension alimentaire versée par la CAF",x=>x.asf],["Rentrée scolaire",x=>x.ars],["Bourses de collège et lycée",x=>x.bourses],["Aide alimentaire (Restos, épicerie sociale)",x=>x.alim],
+    ["Petits avantages (Noël, énergie, réductions locales)",x=>x.noel+x.energie+x.tarifs]];
+  const couts=[[`Transport (${cur.mode==="tc"?"abonnement remboursé à moitié":cur.mode==="pied"?"à pied ou à vélo":(cur.km||0)+" km aller, "+(cur.mode==="va"?"coût complet":"carburant et usure")})`,x=>x.fraisTransport],["Repas au travail",x=>x.fraisRepas],["Frais professionnels",x=>x.fraisPro],["Garde d'enfants",x=>x.fraisGarde],["Mutuelle",x=>x.sante],["Reste à charge santé (franchises, 2 € par consultation)",x=>x.rac],["Dépassements d'honoraires non remboursés",x=>x.dep],["Impôt",x=>x.ir]];
+  const show=f=>Math.abs(f(b))>=0.5||Math.abs(f(x))>=0.5;
+  const line=(l,f,neg)=>`<tr><td>${l}</td><td class="r">${neg&&f(b)>=0.5?"−":""}${eur(f(b))}</td><td class="r">${neg&&f(x)>=0.5?"−":""}${eur(f(x))}</td></tr>`;
+  let h=`<thead><tr><th></th><th class="r k-aid">${R?"Sans carrière":"Sans emploi"}</th><th class="r k-work">${R?"Carrière au salaire médian":S?eur(S)+(cur.ae?" de CA":" brut"):"—"}</th></tr></thead><tbody>`;
+  h+=`<tr class="grp"><td colspan="3">${R?"Revenus":"Salaire"}</td></tr>`;
+  if(!R) h+=line(cur.ae?"Revenu après cotisations":"Salaire net",x=>x.net1);
+  if(show(x=>x.net2)) h+=line("Salaire du conjoint",x=>x.net2);
+  if(show(x=>x.pension)) h+=line("Pension de retraite",x=>x.pension);
+  if(show(x=>x.are)) h+=line("Allocation chômage (ARE)",x=>x.are);
+  h+=`<tr class="grp"><td colspan="3">Aides</td></tr>`; aides.forEach(([l,f])=>{ if(show(f)) h+=line(l,f); });
+  h+=`<tr class="grp"><td colspan="3">Dépenses</td></tr>`; couts.forEach(([l,f])=>{ if(show(f)) h+=line(l,f,true); });
+  h+=`<tr class="tot"><td>Revenu disponible<br><span class="eyebrow" style="font-weight:400">avant loyer et dépenses courantes</span></td><td class="r k-aid">${eur(b.rd)}</td><td class="r k-work">${eur(x.rd)}</td></tr>`;
+  const cc=courantes(cur), rb=resteAVivre(cur,b), rx=resteAVivre(cur,x);
+  h+=`<tr><td>Loyer</td><td class="r">−${eur(cur.loyer)}</td><td class="r">−${eur(cur.loyer)}</td></tr>
+    <tr><td>Dépenses courantes (énergie, eau, téléphone, internet, assurance, charges)</td><td class="r">−${eur(cc)}</td><td class="r">−${eur(cc)}</td></tr>
+    <tr><td>Alimentation (budget minimal)</td><td class="r">−${eur(alimBudget(cur))}</td><td class="r">−${eur(alimBudget(cur))}</td></tr>
+    <tr class="tot"><td>Reste à vivre<br><span class="eyebrow" style="font-weight:400">pour s'habiller, se déplacer, les loisirs, les imprévus</span></td><td class="r ${rb<0?"k-loss":"k-aid"}">${eur(rb)}</td><td class="r ${rx<0?"k-loss":"k-work"}">${eur(rx)}</td></tr>
+    <tr><td class="muted">soit par jour et par personne</td><td class="r">${dec(parJour(cur,rb))} €</td><td class="r">${dec(parJour(cur,rx))} €</td></tr></tbody>`;
+  document.getElementById("detail").innerHTML=h;
+}
+
+function drawChart(m,Ssel){
+  const svg=document.getElementById("chart"), W=460,H=300,L=48,R=10,T=12,B=40;
+  const F1=fullS(cur), max=2.5*F1, pts=[];
+  for(let S=0;S<=max;S+=25) pts.push(simulate(cur,S));
+  const base=m.base.rd;
+  const ymax=Math.ceil(Math.max(...pts.map(p=>p.rd),base)*1.1/500)*500;
+  const X=s=>L+(s/max)*(W-L-R), Y=v=>T+(1-v/ymax)*(H-T-B);
+  let g="";
+  const yStep = ymax>4000?1000:500;
+  for(let v=0;v<=ymax;v+=yStep) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)">${v.toLocaleString("fr-FR")}</text>`;
+  [0,1,2].forEach(k=>{ const s=k*F1; g+=`<text x="${X(s)}" y="${H-B+16}" text-anchor="${k?"middle":"start"}" fill="var(--muted)">${k?k+" SMIC":"0 €"}</text>`; });
+  g+=`<text x="${W-R}" y="${H-B+32}" text-anchor="end" fill="var(--muted)">salaire →</text>`;
+  const below=`M${X(0)},${Y(base)} `+pts.map(p=>`L${X(p.S)},${Y(Math.min(p.rd,base))}`).join(" ")+` L${X(max)},${Y(base)} Z`;
+  g+=`<path d="${below}" fill="var(--loss)" opacity=".25"/>`;
+  g+=`<line x1="${L}" x2="${W-R}" y1="${Y(base)}" y2="${Y(base)}" stroke="var(--aid)" stroke-width="2.5"/>`;
+  g+=`<polyline fill="none" stroke="var(--work)" stroke-width="3" points="${pts.map(p=>`${X(p.S)},${Y(p.rd)}`).join(" ")}"/>`;
+  const xs=simulate(cur,Ssel);
+  g+=`<line x1="${X(Ssel)}" x2="${X(Ssel)}" y1="${T}" y2="${H-B}" stroke="var(--ink)" stroke-dasharray="3 3"/>
+      <circle cx="${X(Ssel)}" cy="${Y(xs.rd)}" r="5.5" fill="var(--work)" stroke="var(--surface)" stroke-width="2"/>`;
+  g+=`<rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent" id="hit" style="cursor:crosshair"/>`;
+  svg.innerHTML=g;
+  svg.querySelector("#hit").addEventListener("click",e=>{ const r=svg.getBoundingClientRect(); const px=(e.clientX-r.left)*W/r.width;
+    document.getElementById("sal").value=Math.round(Math.min(max,Math.max(0,(px-L)/(W-L-R)*max))/10)*10; update(); });
+}
+
+const AIDES = [
+ ["Revenu de solidarité active (RSA)","25 ans et plus (ou parent), ressources faibles","651,69 € seul · 977,54 € couple ou 1 enfant · 1 173,05 € 2 enfants · +260,68 € par enfant dès le 3e","Baisse de 1 € par euro gagné, relayée par la prime d'activité",true],
+ ["RSA majoré","Parent isolé avec enfant de moins de 3 ans (ou séparation récente)","≈ 836,85 € + 278,95 € par enfant","Idem",true],
+ ["Prime d'activité","Salariés et indépendants dès 18 ans","Forfait 638,28 € seul ; bonification jusqu'à 240,63 € par actif (réforme 2026)","Oui, c'est son but : elle s'éteint vers 1,5 SMIC pour une personne seule, plus haut pour une famille",true],
+ ["Aide personnalisée au logement (APL / ALF / ALS)","Locataires et accédants sous conditions","Variable : ≈ 250 à 450 € selon loyer, zone et foyer","Oui, dégressive avec les revenus",true],
+ ["Allocations familiales","Dès 2 enfants","≈ 153 € pour 2 enfants, +196 € par enfant suivant, majoration ≈ 76 € par enfant de 14 ans et plus","Oui, montant identique jusqu'à ≈ 75 000 € de revenus",true],
+ ["Complément familial","3 enfants ou plus, tous âgés d'au moins 3 ans","≈ 199 € ; ≈ 299 € majoré pour les revenus modestes","Oui, sous plafond",true],
+ ["Allocation de soutien familial (ASF)","Parent isolé sans pension alimentaire","≈ 201 € par enfant","Oui",true],
+ ["Allocation de rentrée scolaire (ARS)","Enfants de 6 à 18 ans, sous plafond","≈ 427 € (6-10 ans), 450 € (11-14 ans), 466 € (15-18 ans) par an","Oui, sous plafond",true],
+ ["PAJE : allocation de base","Enfant de moins de 3 ans","≈ 191 € taux plein, ≈ 95 € taux partiel","Oui, sous plafond",true],
+ ["PAJE : prime à la naissance","Grossesse, sous plafond","≈ 1 090 € une fois","Oui, sous plafond",false],
+ ["Complément de libre choix du mode de garde (CMG)","Assistante maternelle, garde à domicile","Calculé sur le coût réel et les revenus (réforme 2025)","Oui, il réduit le reste à charge (saisi dans « garde »)",false],
+ ["PreParE","Parent qui réduit ou cesse son activité","≈ 460 € à taux plein","Partiel si temps partiel",false],
+ ["Allocation aux adultes handicapés (AAH)","Taux d'incapacité ≥ 80 %, ou 50 à 79 % avec accès à l'emploi difficile","≈ 1 041,59 € à taux plein ; le revenu du conjoint n'est plus compté depuis 2023","Oui : salaire non compté 6 mois, puis abattement de 80 % jusqu'à 30 % du SMIC brut et 40 % au-delà",true],
+ ["Majoration pour la vie autonome (MVA)","AAH à taux plein, sans salaire, avec aide au logement","≈ 104,77 €","Non, elle s'arrête dès qu'on travaille",true],
+ ["Allocation de solidarité spécifique (ASS)","Chômeurs en fin de droits ayant assez travaillé","≈ 590 € par mois","Temporairement",false],
+ ["Aide de retour à l'emploi (ARE)","Salariés ayant perdu leur emploi","≈ 57 % du salaire de référence","C'est une assurance financée par les cotisations",false],
+ ["ASPA (minimum vieillesse)","65 ans et plus, petites retraites","1 043,59 € seul · 1 620,18 € couple (revenus compris)","Oui : les ≈ 547 € net de salaire par mois ne sont pas comptés",true],
+ ["Contrat d'engagement jeune (CEJ)","16-25 ans sans emploi ni formation","Jusqu'à 566,17 € par mois (majeur, foyer non imposable), 12 mois maximum","Intégralement jusqu'à 300 € net, puis dégressive jusqu'à 80 % du SMIC",true],
+ ["Complémentaire santé solidaire (CSS)","Ressources sous plafond (≈ 10 250 € par an seul)","Gratuite, ou 8 à 30 € par mois et par personne ; exonère des franchises, de la participation de 2 € et des dépassements d'honoraires","Oui, sous plafond",true],
+ ["Chèque énergie","Revenu fiscal par unité de consommation < 11 000 €","48 à 277 € par an","Oui, sous plafond",true],
+ ["Prime de Noël","Bénéficiaires du RSA, de l'ASS","152,45 € seul, jusqu'à 320 € et plus pour une famille","Non (pas avec la seule prime d'activité)",true],
+ ["Tarification solidaire des transports","Selon la collectivité (ex. Navigo Solidarité en Île-de-France)","Gratuité ou -50 à -75 %","Parfois, selon quotient familial",true],
+ ["Cantine et périscolaire à tarif social","Selon la commune (dont « cantine à 1 € »)","Repas de 0 à 1 € au lieu de 3 à 5 €","Oui, selon quotient familial",true],
+ ["Bourse étudiante sur critères sociaux (CROUS)","Étudiants, selon les revenus des parents","1 454 € (échelon 0 bis) à 6 335 € (échelon 7) par an, en 10 mensualités ; repas à 1 € au restaurant universitaire","Oui, sans réduction (mais assiduité obligatoire)",true],
+ ["Bourses de collège et de lycée","Familles modestes, selon le revenu fiscal","Collège : 120, 336 ou 525 € par an · Lycée : 504 à 1 071 € par an (2026-2027)","Oui, sous plafond",true],
+ ["Aide alimentaire (Restos du cœur, épiceries sociales, Secours populaire)","Selon le « reste à vivre » après loyer","Valeur estimée ≈ 35 € par personne et par mois (colis, courses à 10-30 % du prix)","Oui, tant que le reste à vivre est faible",true],
+ ["Pass'Sport, Pass Culture","Jeunes, conditions variables","50 € (sport) ; crédit culture selon âge","Oui",false],
+ ["Aides aux vacances (VACAF), aides des CCAS","Selon quotient familial et commune","Variable","Selon quotient familial",false],
+ ["Fonds de solidarité logement (FSL), Visale","Impayés, dépôt de garantie, caution","Ponctuel","Oui",false],
+ ["AGEPI et aides à la mobilité (France Travail)","Parent isolé ou demandeur d'emploi qui reprend un travail","Aide ponctuelle à la garde, au permis, au transport","Prévues pour la reprise d'emploi",false],
+ ["Logement social (HLM)","Sous plafond de ressources","Loyer souvent 30 à 50 % sous le privé","Oui, tant que le bail court",true],
+ ["Tarifs sociaux internet et téléphone","Selon les opérateurs, bénéficiaires du RSA","Quelques euros par mois","Variable",false]
+];
+function renderValid(){
+  let h=`<thead><tr><th>Foyer</th><th class="r">Sans emploi : OpenFisca</th><th class="r">Modèle approché</th><th class="r">Salarié : OpenFisca</th><th class="r">Modèle approché</th></tr></thead><tbody>`;
+  let maxd=0;
+  PERSONAS.forEach(p=>{ if(p.edited) return;
+    OPTS.noOF=false; const a=metrics(p); OPTS.noOF=true; const m=metrics(p); OPTS.noOF=false;
+    const d0=m.base.rd-a.base.rd, d1=m.full.rd-a.full.rd; maxd=Math.max(maxd,Math.abs(d0),Math.abs(d1));
+    const c=v=>Math.abs(v)<30?"":Math.abs(v)<80?"k-aid":"k-loss";
+    h+=`<tr><td>${p.nom}</td><td class="r">${eur(a.base.rd)}</td><td class="r ${c(d0)}">${eur(m.base.rd)} (${sgn(d0)})</td><td class="r">${eur(a.full.rd)}</td><td class="r ${c(d1)}">${eur(m.full.rd)} (${sgn(d1)})</td></tr>`; });
+  document.getElementById("valid").innerHTML=h+`</tbody>`;
+}
+function renderAides(){
+  let h=`<thead><tr><th>Aide</th><th>Pour qui</th><th>Montant 2026</th><th>Avec un salaire ?</th></tr></thead><tbody>`;
+  AIDES.forEach(a=>h+=`<tr><td><b>${a[0]}</b></td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td></tr>`);
+  document.getElementById("aides").innerHTML=h+"</tbody>";
+}
+
+document.getElementById("form").addEventListener("input",()=>{ readForm(); update(); renderTop(); });
+document.getElementById("sal").addEventListener("input",update);
+document.getElementById("opt-alim").addEventListener("change",e=>{ OPTS.alim=e.target.checked; renderTop(); update(); });
+document.getElementById("opt-nr").addEventListener("change",e=>{ OPTS.nonRecours=e.target.checked; renderTop(); update(); });
+document.getElementById("opt-mois").addEventListener("change",e=>{ OPTS.mois=+e.target.value; renderTop(); update(); });
+renderAides(); renderValid();
+try{ const saved=JSON.parse(localStorage.getItem("monProfil")||"null"); if(saved&&saved.id==="perso"){ PERSONAS.unshift(saved); scheduleOF(saved); } }catch(e){}
+renderTop(); select(PERSONAS.find(p=>p.id==="camille").id);
+</script>
+
+</body>
+</html>
