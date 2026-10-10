@@ -8,7 +8,7 @@ Simulateur pédagogique qui compare, pour des foyers types et pour un profil per
 
 ## Ce que fait le simulateur
 
-- Compare 13 foyers types (personne seule, parents isolés, familles, handicap, retraite, auto-entrepreneur, salariés au salaire médian…) et un profil personnalisé.
+- Compare 10 foyers types (personne seule, parents isolés, familles, handicap, retraite, auto-entrepreneur, salariés au salaire médian…) et un profil personnalisé.
 - Calcule le RSA, la prime d'activité, l'aide au logement, les prestations familiales, l'AAH, l'ASPA, le chèque énergie et l'impôt avec OpenFisca.
 - Ajoute les postes que les simulateurs officiels ne comptent pas : frais de transport (au kilomètre), garde d'enfants, repas, santé (mutuelle, franchises, dépassements), réductions locales, aide alimentaire.
 - Propose des options réalistes : non-recours aux aides, emploi précaire avec chômage indemnisé.

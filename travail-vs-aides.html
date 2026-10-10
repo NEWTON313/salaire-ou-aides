@@ -36,6 +36,25 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* Réponse */
 .warn{max-width:70ch;margin-top:14px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.92rem;color:var(--muted)}
 .warn b{color:var(--ink)}
+.sub{font-size:1.15rem;color:var(--muted);margin-top:10px;max-width:46ch}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-top:26px;align-items:stretch}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
+.kh-main{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.kh-num{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:clamp(3.6rem,10vw,5.4rem);line-height:.9;color:var(--work)}
+.kh-num small{font-size:.38em;font-weight:700;color:var(--muted);margin-left:6px;font-stretch:90%}
+.kh-lab{font-size:1.05rem;color:var(--ink)}
+.kh-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.kh-list li{display:flex;gap:14px;align-items:baseline;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.kh-list li b{font-family:var(--f-display);font-stretch:85%;font-size:1.45rem;white-space:nowrap;min-width:6.2em}
+.kh-list li span{color:var(--muted);font-size:.95rem}
+.kh-list li b{flex:0 0 auto}
+@media (max-width:600px){.kh-list li{flex-direction:column;gap:2px;padding:10px 14px}.kh-list li b{min-width:0;white-space:normal;font-size:1.3rem}.kh-main{padding:18px}}
+.note{margin-top:16px;font-size:.84rem;color:var(--muted);max-width:80ch}
+.defs{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:.86rem}
+.defs>div:not(.legend){display:flex;gap:6px;align-items:baseline}
+.defs b{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.defs span{color:var(--muted)}
+.defs .legend{margin-left:auto;font-size:.86rem}
 .answer{font-family:var(--f-display);font-stretch:90%;font-size:clamp(1.3rem,3vw,1.75rem);font-weight:600;line-height:1.25;max-width:30ch;margin-top:14px}
 .answer b{color:var(--work)}
 .answer .ref{display:block;margin-top:12px;font-family:var(--f-body);font-size:1.02rem;font-weight:400;line-height:1.45;color:var(--muted);max-width:60ch}
@@ -154,18 +173,21 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
 <div class="wrap">
  <div id="page-home">
   <header>
-    <p class="eyebrow">Barèmes 2026 · 13 foyers fictifs</p>
+    <p class="eyebrow">Barèmes 2026 · 10 foyers types · calculs OpenFisca</p>
     <h1>Ce que rapporte vraiment le travail</h1>
-    <p class="warn"><b>Outil pédagogique, pas un calcul de droits.</b> Les foyers sont fictifs et les montants sont calculés avec les barèmes d'octobre 2026, en grande partie avec OpenFisca, le moteur de calcul public. La comparaison suppose que toutes les aides sont demandées et que l'emploi est stable, ce qui n'est pas toujours le cas (options plus bas). Pour connaître vos droits réels : <a href="https://www.mesdroitssociaux.gouv.fr" target="_blank" rel="noopener">mesdroitssociaux.gouv.fr</a>.</p>
-    <p class="answer" id="answer"></p>
-    <div class="facts" id="facts"></div>
+    <p class="sub">Vivre des aides ou travailler : le calcul, foyer par foyer, une fois tout compté.</p>
+    <div class="hero" id="hero"></div>
+    <p class="note">Outil pédagogique, pas un calcul de droits. Foyers fictifs, aides toutes demandées, emploi stable. Vos droits réels : <a href="https://www.mesdroitssociaux.gouv.fr" target="_blank" rel="noopener">mesdroitssociaux.gouv.fr</a></p>
   </header>
 
   <section id="comparaison">
-    <h2>Revenu disponible et reste à vivre par mois</h2>
-    <p class="muted"><b>Revenu disponible</b> : salaires et aides (aide au logement comprise), moins l'impôt, la santé et les frais du travail. <b>Reste à vivre</b> : ce qui reste ensuite, une fois payés le loyer et les dépenses courantes (énergie, téléphone, internet, assurances), pour manger, s'habiller, se déplacer et les loisirs. Foyers classés du plus petit au plus grand écart entre la vie d'aides et la vie salariée. Cliquez sur un foyer pour voir le détail.</p>
-    <div class="legend"><span><i style="background:var(--aid)"></i>Sans emploi (vit des aides)</span><span><i style="background:var(--work)"></i>Salarié (le salaire retenu est indiqué pour chaque foyer)</span>
-      </div>
+    <h2>Foyer par foyer</h2>
+    <p class="muted">Du plus petit au plus grand écart. Touchez un foyer pour voir le détail.</p>
+    <div class="defs">
+      <div><b>Revenu disponible</b><span>salaires + aides, moins impôt, santé et frais du travail</span></div>
+      <div><b>Reste à vivre</b><span>ce qui reste après loyer, charges et alimentation</span></div>
+      <div class="legend"><span><i style="background:var(--aid)"></i>Sans emploi</span><span><i style="background:var(--work)"></i>Salarié</span></div>
+    </div>
     <div class="opts">
       <label><input type="checkbox" id="opt-alim" checked> Compter l'aide alimentaire</label>
       <label><input type="checkbox" id="opt-nr"> Toutes les aides ne sont pas demandées (non-recours moyen)</label>
@@ -646,16 +668,10 @@ const PERSONAS = [
   adults:1,age:30,kids:[],majore:false,asf:false,zone:2,loyer:520,mode:"tc",km:8,abo:73,repas:60,garde:0,tarifs:30,s2:0},
  {id:"sandrine",nom:"Sandrine",tag:"Mère seule, 2 enfants",desc:"Sandrine, 41 ans, élève seule ses enfants de 8 et 13 ans dans un HLM près de Saint-Étienne. Le père ne verse pas de pension. Pour travailler, il lui faut une voiture et le périscolaire.",
   adults:1,age:41,kids:[8,13],majore:false,asf:true,zone:2,loyer:470,mode:"vp",km:20,abo:0,repas:50,garde:90,tarifs:70,s2:0},
- {id:"moreau",nom:"Famille Moreau",tag:"Couple, 2 enfants, un revenu",desc:"Thomas et Léa, 34 ans, enfants de 2 et 6 ans, logement privé à Nantes. Léa reste au foyer : on fait varier le salaire de Thomas. Pas de frais de garde puisque Léa garde le plus jeune.",
-  adults:2,age:34,kids:[2,6],majore:false,asf:false,zone:2,loyer:780,mode:"vp",km:15,abo:0,repas:60,garde:0,tarifs:60,s2:0},
  {id:"diallo",nom:"Famille Diallo",tag:"Couple, 4 enfants",desc:"Mamadou et Awa, 43 ans, quatre enfants de 4 à 15 ans, HLM en Seine-Saint-Denis. On fait varier le salaire de Mamadou, Awa ne travaille pas. Le Navigo est remboursé à moitié par l'employeur.",
   adults:2,age:43,kids:[4,7,11,15],majore:false,asf:false,zone:1,loyer:690,mode:"tc",km:12,abo:91,repas:60,garde:0,tarifs:120,s2:0},
- {id:"nadia",nom:"Nadia",tag:"Mère seule, bébé",desc:"Nadia, 26 ans, mère d'un bébé d'un an, studio du privé à Paris. Elle touche le RSA majoré. Si elle travaille, son fils va à la crèche (reste à charge estimé).",
-  adults:1,age:26,kids:[1],majore:true,asf:true,zone:1,loyer:750,mode:"tc",km:6,abo:91,repas:60,garde:180,tarifs:80,s2:0},
  {id:"gerard",nom:"Gérard",tag:"Seul, rural, 57 ans",desc:"Gérard, 57 ans, vit seul dans la Creuse. Aucun transport en commun : travailler impose 40 km de trajet quotidien en voiture.",
   adults:1,age:57,kids:[],majore:false,asf:false,zone:3,loyer:380,mode:"va",km:20,abo:0,repas:70,garde:0,tarifs:10,s2:0},
- {id:"lefevre",nom:"Famille Lefèvre",tag:"Second salaire du couple",desc:"Julie travaille déjà au SMIC. Marc, 37 ans, se demande si reprendre un emploi vaut le coup. Leur fils a 10 ans. Il faudra une deuxième voiture et le périscolaire.",
-  adults:2,age:37,kids:[10],majore:false,asf:false,zone:2,loyer:650,mode:"va",km:12,abo:0,repas:60,garde:80,tarifs:20,s2:1867},
  {id:"lucas",nom:"Lucas",tag:"Jeune de 22 ans",desc:"Lucas, 22 ans, a quitté le domicile de ses parents pour un studio à Rennes. Sans enfant, il n'a pas droit au RSA. Il suit un Contrat d'engagement jeune à la Mission locale (15 à 20 heures d'activités par semaine), limité à 12 mois. Décochez le CEJ pour voir sa situation une fois le contrat terminé.",
   adults:1,age:22,kids:[],majore:false,asf:false,cej:true,zone:2,loyer:430,mode:"tc",km:5,abo:32,repas:50,garde:0,tarifs:15,s2:0},
  {id:"monique",nom:"Monique",tag:"Retraitée, 67 ans",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
@@ -682,17 +698,22 @@ function renderTop(){
   const agg = all.filter(x=>!x.p.compareRetraite && !x.p.refS && !x.p.custom);   // le retraité suit une autre comparaison
   const avg = agg.reduce((s,x)=>s+kept10(x.m),0)/agg.length;
   const gains = agg.map(x=>x.m.gain);
-  document.getElementById("answer").innerHTML =
-    `Travailler rapporte toujours plus que les aides. Mais sur <b>10 €</b> de salaire, il ne reste en moyenne que <b>${dec(avg)} €</b> en plus dans la poche.`;
-  const ref = all.find(x=>x.p.refS);
-  if(ref) document.getElementById("answer").innerHTML += `<span class="ref">Mais ces cas sont des situations particulières. Le salarié typique, au salaire médian, a un revenu disponible de <b>${eur(ref.m.full.rd)}</b> par mois contre <b>${eur(ref.m.base.rd)}</b> s'il vivait des aides, soit <b>${dec(ref.m.full.rd/ref.m.base.rd)} fois plus</b>.</span>`;
+  // Le repère « salarié typique » est Camille, jamais le profil personnalisé
+  const ref = all.find(x=>x.p.id==="camille");
   const sorted=[...agg].sort((a,b)=>kept10(a.m)-kept10(b.m));
-  const low=sorted.slice(0,3).map(x=>x.p.nom).join(", ");
+  const low=sorted.slice(0,2).map(x=>x.p.nom).join(" et ");
   const n=Math.round(avg);
-  document.getElementById("facts").innerHTML = `
-    <div class="fact"><span class="eyebrow">Au SMIC temps plein</span><span class="big k-gain">${sgn(Math.min(...gains))} à ${sgn(Math.max(...gains)).slice(1)}</span><p>de plus par mois qu'en vivant des aides, selon le foyer.</p></div>
-    <div class="fact"><span class="eyebrow">Sur 10 € de salaire</span><div class="coins">${[...Array(10)].map((_,i)=>`<i class="${i<n?"kept":"lost"}"></i>`).join("")}</div><p>environ ${n} € restent en plus, le reste compense les aides perdues et les frais du travail.</p></div>
-    <div class="fact"><span class="eyebrow">Les moins gagnants</span><span class="big k-aid" style="font-size:1.5rem">${low}</span><p>La voiture obligatoire ou la garde d'enfants mangent une grande partie du salaire.</p></div>`;
+  document.getElementById("hero").innerHTML = `
+    <div class="kh-main">
+      <span class="kh-num">${dec(avg)} €<small>sur 10 €</small></span>
+      <span class="kh-lab">de salaire restent <b>en plus</b> dans la poche, en moyenne, au SMIC.</span>
+      <div class="coins" aria-hidden="true">${[...Array(10)].map((_,i)=>`<i class="${i<n?"kept":"lost"}"></i>`).join("")}</div>
+    </div>
+    <ul class="kh-list">
+      <li><b class="k-gain">${sgn(Math.min(...gains))} à ${sgn(Math.max(...gains)).slice(1)}</b><span>par mois au SMIC, selon le foyer : travailler rapporte toujours plus que les aides.</span></li>
+      ${ref?`<li><b class="k-work">× ${dec(ref.m.full.rd/ref.m.base.rd)}</b><span>pour un salarié au salaire médian : ${eur(ref.m.full.rd)} par mois, contre ${eur(ref.m.base.rd)} sans emploi.</span></li>`:""}
+      <li><b class="k-aid">${low}</b><span>gagnent le moins : voiture obligatoire, garde d'enfants ou handicap.</span></li>
+    </ul>`;
   const sortedRows=[...all].sort((a,b)=>a.m.gain-b.m.gain);   // du plus petit au plus grand écart
   const rv=sortedRows.map(({p,m})=>[resteAVivre(p,m.base),resteAVivre(p,m.full)]);
   const max=Math.max(...all.map(x=>x.m.full.rd), ...all.map(x=>x.m.base.rd));   // même échelle pour les deux jauges
