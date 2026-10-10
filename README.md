@@ -6,6 +6,10 @@ Simulateur pédagogique qui compare, pour des foyers types et pour un profil per
 
 > Outil pédagogique, pas un calcul de droits. Pour connaître vos droits réels : [mesdroitssociaux.gouv.fr](https://www.mesdroitssociaux.gouv.fr).
 
+## Démarche
+
+Ce site a un seul but : apporter de la clarté au débat « travailler est-il plus intéressant que vivre des aides ? », dans un but de transparence et **sans orientation politique**. Il n'est lié à aucun parti, syndicat, association, administration ou entreprise, ne reçoit aucun financement et n'affiche aucune publicité. Il montre les limites dans les deux sens et ne juge personne.
+
 ## Ce que fait le simulateur
 
 - Compare 10 foyers types (personne seule, parents isolés, familles, handicap, retraite, auto-entrepreneur, salariés au salaire médian…) et un profil personnalisé.

@@ -60,6 +60,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .kh-list li span{color:var(--muted);font-size:.95rem}
 .kh-list li b{flex:0 0 auto}
 @media (max-width:600px){.kh-list li{flex-direction:column;gap:2px;padding:10px 14px}.kh-list li b{min-width:0;white-space:normal;font-size:1.3rem}.kh-main{padding:18px}}
+.purpose{margin-top:12px;max-width:80ch;padding:12px 16px;border-left:3px solid var(--work);background:color-mix(in srgb,var(--work) 7%,transparent);border-radius:0 8px 8px 0;font-size:.95rem;color:var(--muted)}
+.purpose b{color:var(--ink)}
 .note{margin-top:16px;font-size:.84rem;color:var(--muted);max-width:80ch}
 .defs{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:.86rem}
 .defs>div:not(.legend){display:flex;gap:6px;align-items:baseline}
@@ -193,6 +195,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     <p class="sub">Vivre des aides ou travailler : le calcul, foyer par foyer, une fois tout compté.</p>
     <div class="hero" id="hero"></div>
     <p class="note">Outil pédagogique, pas un calcul de droits. Foyers fictifs, aides toutes demandées, emploi stable. Vos droits réels : <a href="https://www.mesdroitssociaux.gouv.fr" target="_blank" rel="noopener">mesdroitssociaux.gouv.fr</a></p>
+    <p class="purpose"><b>Pourquoi ce site ?</b> Pour apporter de la clarté à un débat souvent caricatural : travailler est-il plus intéressant que vivre des aides ? Dans un but de transparence et <b>sans orientation politique</b> : barèmes officiels, calculs ouverts, limites affichées dans les deux sens. <a href="#demarche">La démarche</a></p>
   </header>
 
   <section id="comparaison">
@@ -309,6 +312,19 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
  <div id="page-more">
   <section>
     <h2>Pour aller plus loin</h2>
+    <details id="demarche">
+      <summary>La démarche : transparence et neutralité</summary>
+      <div class="inner">
+        <ul class="lim">
+          <li><b>Objectif :</b> donner de la clarté au débat public sur une question qui revient sans cesse, « travailler est-il plus intéressant que vivre des aides ? », avec des chiffres vérifiables plutôt que des impressions.</li>
+          <li><b>Sans orientation politique :</b> le site n'est lié à aucun parti, syndicat, association, administration ou entreprise. Il ne reçoit aucun financement et n'affiche aucune publicité.</li>
+          <li><b>Transparence :</b> barèmes officiels de 2026, aides et impôt calculés avec OpenFisca (le moteur public utilisé par mesdroitssociaux.gouv.fr), méthode détaillée ci-dessous, code source public sur <a href="https://github.com/NEWTON313/salaire-ou-aides" target="_blank" rel="noopener">GitHub</a>.</li>
+          <li><b>Équilibre :</b> le site montre ce qui rend la vie d'aides plus difficile (aides non demandées, accès au logement, absence de retraite) autant que ce qui rend le travail moins rentable (frais de transport et de garde, emplois précaires, aides perdues).</li>
+          <li><b>Ce que le site ne fait pas :</b> il ne juge pas les personnes qui vivent des aides et ne recommande aucune politique. Il décrit les règles telles qu'elles s'appliquent, chacun en tire ses conclusions.</li>
+          <li><b>Corrections bienvenues :</b> une erreur de barème ou de règle ? Signalez-la sur <a href="https://github.com/NEWTON313/salaire-ou-aides/issues" target="_blank" rel="noopener">GitHub</a> ou par e-mail (voir les mentions légales), en citant la source officielle.</li>
+        </ul>
+      </div>
+    </details>
     <details>
       <summary>Ce que l'argent ne dit pas</summary>
       <div class="inner cols">
@@ -1057,7 +1073,7 @@ function route(){
     gaEvent("page_view",{page_title:document.title, page_location:location.href}); return; }
   if(detail){ if(!cur || cur.id!==h.slice(6)) select(h.slice(6)); window.scrollTo(0,0);
     document.title = `${cur.nom} : en détail · Ce que rapporte vraiment le travail`; }
-  else { document.title = "Ce que rapporte vraiment le travail"; const t=document.getElementById(h); if(t) setTimeout(()=>t.scrollIntoView(),0); }
+  else { document.title = "Ce que rapporte vraiment le travail"; const t=document.getElementById(h); if(t){ if(t.tagName==="DETAILS") t.open=true; setTimeout(()=>t.scrollIntoView(),0); } }
   gaEvent("page_view",{page_title:document.title, page_location:location.href});
 }
 window.addEventListener("hashchange", route);
