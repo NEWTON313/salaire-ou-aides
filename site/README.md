@@ -18,14 +18,15 @@ Simulateur pédagogique qui compare, pour des foyers types et pour un profil per
 python site/build_site.py
 ```
 
-## Publier sur GitHub Pages (gratuit)
+## Publication (Vercel relié à GitHub)
 
-1. Créer un dépôt sur GitHub, par exemple `rapporte-travail`.
-2. Y déposer le contenu du dossier `site/` (au minimum `index.html`).
-3. Dans le dépôt : Settings → Pages → Source « Deploy from a branch », branche `main`, dossier `/ (root)`.
-4. La page est en ligne quelques minutes plus tard à l'adresse `https://<votre-compte>.github.io/rapporte-travail/`.
+Le projet Vercel `salaire-ou-aides` est relié au dépôt GitHub `NEWTON313/salaire-ou-aides`, avec `site` comme dossier racine. Chaque envoi sur la branche `main` met le site en ligne automatiquement sur https://salaire-ou-aides.fr.
 
-L'API publique d'OpenFisca (`api.fr.openfisca.org`) accepte les appels depuis n'importe quel site : aucun serveur n'est nécessaire.
+1. Modifier `travail-vs-aides.html`.
+2. Régénérer la page : `python site/build_site.py`.
+3. Envoyer : `git add -A`, `git commit -m "…"`, `git push`.
+
+Vercel publie la nouvelle version en une minute environ. Les envois sur une autre branche créent une version de prévisualisation.
 
 ## Mettre à jour les barèmes
 
@@ -34,7 +35,7 @@ Les barèmes changent en janvier (impôt, ASPA), en avril (RSA, prestations fami
 1. Relancer `python openfisca/of_grid.py` (l'API utilise automatiquement les derniers barèmes).
 2. Réintégrer `of_data.json` dans la constante `OFDATA` de `travail-vs-aides.html`.
 3. Mettre à jour les montants écrits en clair (recensement des aides, textes) et la date des barèmes.
-4. Relancer `python site/build_site.py` et republier.
+4. Relancer `python site/build_site.py`, puis committer et pousser sur GitHub.
 
 ## Avant la mise en ligne
 
