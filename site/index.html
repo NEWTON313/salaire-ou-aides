@@ -3,14 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ce que rapporte vraiment le travail</title>
+<meta name="description" content="Vivre des aides ou travailler : le calcul foyer par foyer, une fois tout compté (aides, impôt, santé, transport, garde, loyer). Simulateur pédagogique, barèmes 2026, calculs OpenFisca.">
 <link rel="canonical" href="https://salaire-ou-aides.fr/">
-<meta name="description" content="Simulateur pédagogique : revenu disponible et reste à vivre sans emploi ou en travaillant, pour des foyers types et votre propre profil. Barèmes 2026, calculs OpenFisca.">
+<meta name="theme-color" content="#0e1321" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="salaire-ou-aides.fr">
+<meta property="og:title" content="Ce que rapporte vraiment le travail">
+<meta property="og:description" content="Vivre des aides ou travailler : le calcul foyer par foyer, une fois tout compté (aides, impôt, santé, transport, garde, loyer). Simulateur pédagogique, barèmes 2026, calculs OpenFisca.">
+<meta property="og:url" content="https://salaire-ou-aides.fr/">
+<meta property="og:image" content="https://salaire-ou-aides.fr/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ce que rapporte vraiment le travail : 3,4 € restent en plus sur 10 € de salaire au SMIC.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ce que rapporte vraiment le travail">
+<meta name="twitter:description" content="Vivre des aides ou travailler : le calcul foyer par foyer, une fois tout compté (aides, impôt, santé, transport, garde, loyer). Simulateur pédagogique, barèmes 2026, calculs OpenFisca.">
+<meta name="twitter:image" content="https://salaire-ou-aides.fr/og.png">
+<link rel="preload" href="/fonts/archivo-latin-b92029.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/source-sans-3-latin-263ee0.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Ce que rapporte vraiment le travail", "url": "https://salaire-ou-aides.fr/", "description": "Vivre des aides ou travailler : le calcul foyer par foyer, une fois tout compté (aides, impôt, santé, transport, garde, loyer). Simulateur pédagogique, barèmes 2026, calculs OpenFisca.", "applicationCategory": "FinanceApplication", "operatingSystem": "Tous navigateurs", "inLanguage": "fr-FR", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "license": "https://salaire-ou-aides.fr/LICENSE.txt"}</script>
 <style>:root{color-scheme:light dark}body{margin:0}img{max-width:100%}</style>
 </head>
 <body>
-<title>Ce que rapporte vraiment le travail</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout : une réponse, une comparaison en barres, un foyer en détail, puis annexes repliées */
 :root{
@@ -46,6 +67,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* Réponse */
 .warn{max-width:70ch;margin-top:14px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.92rem;color:var(--muted)}
 .warn b{color:var(--ink)}
+.brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:18px;text-decoration:none;color:var(--ink);font-family:var(--f-display);font-stretch:90%;font-weight:700;font-size:1.05rem}
+.brand:hover span{color:var(--work)}
+/* Micro-animations : jauges qui se remplissent, chiffre clé qui défile, survol des foyers */
+.bar span{transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.row{transition:background-color .2s ease, transform .2s ease}
+.row:hover{transform:translateX(2px)}
+.kh-main,.kh-list li{transition:transform .25s ease, border-color .25s ease}
+.kh-list li:hover,.kh-main:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--work) 45%,var(--line))}
+.cta{transition:filter .2s ease, transform .1s ease}
+.cta:hover{filter:brightness(1.08)} .cta:active{transform:scale(.98)}
+@media (prefers-reduced-motion:reduce){.bar span,.row,.kh-main,.kh-list li,.cta{transition:none}.row:hover,.kh-list li:hover,.kh-main:hover{transform:none}}
 .sub{font-size:1.15rem;color:var(--muted);margin-top:10px;max-width:46ch}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-top:26px;align-items:stretch}
 @media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
@@ -183,6 +215,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
 <div class="wrap">
  <div id="page-home">
   <header>
+    <a class="brand" href="#accueil" aria-label="salaire-ou-aides.fr, accueil"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><rect x="15" y="30" width="13" height="20" rx="3" fill="var(--aid)"/><rect x="36" y="14" width="13" height="36" rx="3" fill="var(--work)"/></svg><span>salaire-ou-aides.fr</span></a>
     <p class="eyebrow">Barèmes 2026 · 10 foyers types · calculs OpenFisca</p>
     <h1>Ce que rapporte vraiment le travail</h1>
     <p class="sub">Vivre des aides ou travailler : le calcul, foyer par foyer, une fois tout compté.</p>
@@ -790,6 +823,20 @@ document.getElementById("mform").addEventListener("input",syncMform);
 document.getElementById("mform").addEventListener("submit",e=>{ e.preventDefault(); addMonProfil(readMonProfil(), true); });
 document.getElementById("m-go").addEventListener("click",()=>{ addMonProfil(readMonProfil(), true); gaEvent("profil_cree"); });
 
+// Au premier affichage : les jauges partent de zéro et le chiffre clé défile
+let firstPaint = true;
+function animateIntro(){
+  if(!firstPaint) return; firstPaint = false;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const bars=[...document.querySelectorAll("#rows .bar span")];
+  bars.forEach(sp=>{ sp.dataset.w=sp.style.width; sp.style.width="0"; });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>bars.forEach((sp,i)=>{ sp.style.transitionDelay=Math.min(i*12,400)+"ms"; sp.style.width=sp.dataset.w; })));
+  const num=document.querySelector(".kh-num"); if(!num) return;
+  const target=parseFloat(num.firstChild.textContent.replace(",",".")), t0=performance.now(), dur=900;
+  const step=t=>{ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3); num.firstChild.textContent=dec(target*e)+" €"; if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
 function renderTabs(){
   const t=document.getElementById("tabs"); t.innerHTML="";
   PERSONAS.forEach(p=>{ const b=document.createElement("button"); b.className="tab"; b.type="button"; b.role="tab";
@@ -1024,7 +1071,7 @@ function route(){
 }
 window.addEventListener("hashchange", route);
 
-renderTop(); select(PERSONAS.find(p=>p.id==="camille").id); route();
+renderTop(); select(PERSONAS.find(p=>p.id==="camille").id); route(); animateIntro();
 </script>
 
 </body>

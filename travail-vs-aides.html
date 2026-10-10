@@ -36,6 +36,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* Réponse */
 .warn{max-width:70ch;margin-top:14px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.92rem;color:var(--muted)}
 .warn b{color:var(--ink)}
+.brand{display:inline-flex;align-items:center;gap:10px;margin-bottom:18px;text-decoration:none;color:var(--ink);font-family:var(--f-display);font-stretch:90%;font-weight:700;font-size:1.05rem}
+.brand:hover span{color:var(--work)}
+/* Micro-animations : jauges qui se remplissent, chiffre clé qui défile, survol des foyers */
+.bar span{transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.row{transition:background-color .2s ease, transform .2s ease}
+.row:hover{transform:translateX(2px)}
+.kh-main,.kh-list li{transition:transform .25s ease, border-color .25s ease}
+.kh-list li:hover,.kh-main:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--work) 45%,var(--line))}
+.cta{transition:filter .2s ease, transform .1s ease}
+.cta:hover{filter:brightness(1.08)} .cta:active{transform:scale(.98)}
+@media (prefers-reduced-motion:reduce){.bar span,.row,.kh-main,.kh-list li,.cta{transition:none}.row:hover,.kh-list li:hover,.kh-main:hover{transform:none}}
 .sub{font-size:1.15rem;color:var(--muted);margin-top:10px;max-width:46ch}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-top:26px;align-items:stretch}
 @media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
@@ -173,6 +184,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
 <div class="wrap">
  <div id="page-home">
   <header>
+    <a class="brand" href="#accueil" aria-label="salaire-ou-aides.fr, accueil"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><rect x="15" y="30" width="13" height="20" rx="3" fill="var(--aid)"/><rect x="36" y="14" width="13" height="36" rx="3" fill="var(--work)"/></svg><span>salaire-ou-aides.fr</span></a>
     <p class="eyebrow">Barèmes 2026 · 10 foyers types · calculs OpenFisca</p>
     <h1>Ce que rapporte vraiment le travail</h1>
     <p class="sub">Vivre des aides ou travailler : le calcul, foyer par foyer, une fois tout compté.</p>
@@ -780,6 +792,20 @@ document.getElementById("mform").addEventListener("input",syncMform);
 document.getElementById("mform").addEventListener("submit",e=>{ e.preventDefault(); addMonProfil(readMonProfil(), true); });
 document.getElementById("m-go").addEventListener("click",()=>{ addMonProfil(readMonProfil(), true); gaEvent("profil_cree"); });
 
+// Au premier affichage : les jauges partent de zéro et le chiffre clé défile
+let firstPaint = true;
+function animateIntro(){
+  if(!firstPaint) return; firstPaint = false;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const bars=[...document.querySelectorAll("#rows .bar span")];
+  bars.forEach(sp=>{ sp.dataset.w=sp.style.width; sp.style.width="0"; });
+  requestAnimationFrame(()=>requestAnimationFrame(()=>bars.forEach((sp,i)=>{ sp.style.transitionDelay=Math.min(i*12,400)+"ms"; sp.style.width=sp.dataset.w; })));
+  const num=document.querySelector(".kh-num"); if(!num) return;
+  const target=parseFloat(num.firstChild.textContent.replace(",",".")), t0=performance.now(), dur=900;
+  const step=t=>{ const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3); num.firstChild.textContent=dec(target*e)+" €"; if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
 function renderTabs(){
   const t=document.getElementById("tabs"); t.innerHTML="";
   PERSONAS.forEach(p=>{ const b=document.createElement("button"); b.className="tab"; b.type="button"; b.role="tab";
@@ -1014,5 +1040,5 @@ function route(){
 }
 window.addEventListener("hashchange", route);
 
-renderTop(); select(PERSONAS.find(p=>p.id==="camille").id); route();
+renderTop(); select(PERSONAS.find(p=>p.id==="camille").id); route(); animateIntro();
 </script>

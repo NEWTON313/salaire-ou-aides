@@ -22,6 +22,9 @@ Simulateur pédagogique qui compare, pour des foyers types et pour un profil per
 | `site/build_site.py` | Génère `site/index.html` pour le web, avec OpenFisca en direct |
 | `site/index.html` | Page publiée (générée, ne pas modifier à la main) |
 | `site/README.md` | Publication et mise à jour des barèmes |
+| `site/make_images.py` | Génère le logo, les icônes et l'image de partage (`og.png`) |
+| `site/fonts/` | Polices hébergées sur le site (licence SIL Open Font License) |
+| `site/404.html` | Page d'erreur |
 | `openfisca/of_grid.py` | Recalcule les grilles OpenFisca des foyers types |
 | `openfisca/of_data.json` | Résultats de la dernière exécution |
 

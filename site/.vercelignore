@@ -1,4 +1,5 @@
 .env*
 build_site.py
+make_images.py
 README.md
 .vercel
