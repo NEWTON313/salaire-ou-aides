@@ -86,6 +86,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 /* Détail */
 .tabs{display:flex;flex-wrap:wrap;gap:6px}
 .cta{font:inherit;font-weight:700;padding:9px 18px;border-radius:7px;border:0;background:var(--work);color:var(--surface);cursor:pointer}
+.cookie{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:760px;margin:0 auto;z-index:50;display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.22);font-size:.92rem}
+.cookie p{flex:1 1 360px;margin:0;color:var(--muted)}
+.cookie p b{color:var(--ink)}
+.ck-btns{display:flex;gap:8px}
+.ck-btns button{font:inherit;font-weight:700;min-width:110px;padding:8px 14px;border-radius:7px;cursor:pointer;border:1px solid var(--work);background:var(--surface);color:var(--work)}
+.ck-btns #ck-accept{background:var(--work);color:var(--surface)}
+.linkbtn{font:inherit;color:var(--work);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
 .tab{font:inherit;font-size:.92rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .tab[aria-selected="true"]{background:var(--work);border-color:var(--work);color:var(--surface)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0;display:flex;flex-direction:column;gap:14px}
@@ -261,7 +268,7 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
           <li><b>Hébergeur :</b> Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis — vercel.com.</li>
           <li><b>Date des barèmes :</b> octobre 2026 (RSA et prestations au 1er avril 2026, SMIC au 1er juin 2026, bourses 2026-2027).</li>
           <li><b>Moteur de calcul :</b> <a href="https://openfisca.org/fr/" target="_blank" rel="noopener">OpenFisca France</a>, logiciel libre (licence AGPL), complété par des estimations décrites dans « Méthode et sources ».</li>
-          <li><b>Données personnelles :</b> aucun compte, aucun cookie, aucune mesure d'audience. Le profil personnalisé reste dans votre navigateur (stockage local) et peut être effacé en vidant les données du site. Dans la version publiée sur le web, la situation décrite (sans nom ni identifiant) est envoyée à l'API publique d'OpenFisca uniquement pour faire le calcul. Comme tout serveur web, l'hébergeur traite temporairement des données techniques (adresse IP, navigateur, date de la requête) pour assurer le service et la sécurité.</li>
+          <li><b>Données personnelles :</b> aucun compte. Sur salaire-ou-aides.fr, et <b>seulement si vous l'acceptez</b>, la fréquentation est mesurée avec Google Analytics (Google Ireland Ltd) : cookies « _ga » conservés 13 mois au plus, aucune donnée publicitaire, partage des données avec Google désactivé. Sans votre accord, aucun cookie n'est déposé. Votre choix est mémorisé 13 mois et peut être modifié à tout moment : <button type="button" class="linkbtn" id="ck-manage">gérer les cookies</button>. Le profil personnalisé reste dans votre navigateur (stockage local) et peut être effacé en vidant les données du site. Dans la version publiée sur le web, la situation décrite (sans nom ni identifiant) est envoyée à l'API publique d'OpenFisca uniquement pour faire le calcul. Comme tout serveur web, l'hébergeur traite temporairement des données techniques (adresse IP, navigateur, date de la requête) pour assurer le service et la sécurité.</li>
           <li><b>Vos droits :</b> conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement et d'opposition. Pour les exercer, écrivez à l'adresse de contact ci-dessus. Vous pouvez aussi adresser une réclamation à la CNIL (cnil.fr).</li>
           <li><b>Licence :</b> le code est publié sous licence MIT (<a href="https://salaire-ou-aides.fr/LICENSE.txt" target="_blank" rel="noopener">texte de la licence</a>) : réutilisation, modification et redistribution libres, en conservant la mention de licence, sans garantie. Les textes, tableaux et graphiques sont publiés sous licence <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener">Creative Commons Attribution 4.0 (CC BY 4.0)</a> : réutilisation libre, y compris commerciale, en citant la source « salaire-ou-aides.fr » (<a href="https://salaire-ou-aides.fr/LICENSE-CONTENU.txt" target="_blank" rel="noopener">détails</a>). Les données publiques citées restent soumises aux conditions de leurs producteurs.</li>
         </ul>
@@ -298,6 +305,11 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
       </div>
     </details>
   </section>
+</div>
+
+<div class="cookie" id="cookie-banner" role="dialog" aria-labelledby="ck-title" hidden>
+  <p><b id="ck-title">Mesure d'audience.</b> Avec votre accord, ce site mesure sa fréquentation avec Google Analytics (cookies). Cela permet de savoir quels foyers et quelles options intéressent les visiteurs. Sans accord, aucun cookie n'est déposé. Vous pourrez changer d'avis via « gérer les cookies » dans les mentions légales.</p>
+  <div class="ck-btns"><button type="button" id="ck-refuse">Refuser</button><button type="button" id="ck-accept">Accepter</button></div>
 </div>
 
 <script id="model">
@@ -712,7 +724,7 @@ function syncMform(){
 }
 document.getElementById("mform").addEventListener("input",syncMform);
 document.getElementById("mform").addEventListener("submit",e=>{ e.preventDefault(); addMonProfil(readMonProfil(), true); });
-document.getElementById("m-go").addEventListener("click",()=>addMonProfil(readMonProfil(), true));
+document.getElementById("m-go").addEventListener("click",()=>{ addMonProfil(readMonProfil(), true); gaEvent("profil_cree"); });
 
 function renderTabs(){
   const t=document.getElementById("tabs"); t.innerHTML="";
@@ -877,6 +889,27 @@ document.getElementById("sal").addEventListener("input",update);
 document.getElementById("opt-alim").addEventListener("change",e=>{ OPTS.alim=e.target.checked; renderTop(); update(); });
 document.getElementById("opt-nr").addEventListener("change",e=>{ OPTS.nonRecours=e.target.checked; renderTop(); update(); });
 document.getElementById("opt-mois").addEventListener("change",e=>{ OPTS.mois=+e.target.value; renderTop(); update(); });
+// Mesure d'audience Google Analytics : chargée uniquement après consentement, et seulement sur le site publié
+const GA_ID = "G-B5JZ33ME75";
+function gaLoad(){
+  if(window.__gaLoaded) return; window.__gaLoaded = true;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ dataLayer.push(arguments); };
+  gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"granted"});
+  gtag("js", new Date()); gtag("config", GA_ID, {anonymize_ip:true});
+  const sc=document.createElement("script"); sc.async=true; sc.src="https://www.googletagmanager.com/gtag/js?id="+GA_ID; document.head.appendChild(sc);
+}
+function gaClear(){ document.cookie.split(";").map(c=>c.split("=")[0].trim()).filter(n=>n.startsWith("_ga")).forEach(n=>{
+  ["", "; domain=."+location.hostname.replace(/^www\./,""), "; domain="+location.hostname].forEach(d=>document.cookie=n+"=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"+d); }); }
+function consentGet(){ try{ const c=JSON.parse(localStorage.getItem("consentGA")||"null"); if(c && Date.now()-c.t < 395*864e5) return c.v; }catch(e){} return null; }
+function consentSet(v){ try{ localStorage.setItem("consentGA", JSON.stringify({v, t:Date.now()})); }catch(e){} }
+const ckBanner=document.getElementById("cookie-banner");
+document.getElementById("ck-accept").addEventListener("click",()=>{ consentSet("yes"); ckBanner.hidden=true; gaLoad(); });
+document.getElementById("ck-refuse").addEventListener("click",()=>{ const was=consentGet()==="yes"; consentSet("no"); ckBanner.hidden=true; if(was){ gaClear(); location.reload(); } });
+document.getElementById("ck-manage").addEventListener("click",()=>{ if(LIVE_OF && GA_ID) ckBanner.hidden=false; });
+if(LIVE_OF && GA_ID){ const c=consentGet(); if(c==="yes") gaLoad(); else if(c===null) ckBanner.hidden=false; }
+const gaEvent=(name,params)=>{ if(window.gtag && window.__gaLoaded) gtag("event",name,params||{}); };
+
 renderAides(); renderValid();
 try{ const saved=JSON.parse(localStorage.getItem("monProfil")||"null"); if(saved&&saved.id==="perso"){ PERSONAS.unshift(saved); scheduleOF(saved); } }catch(e){}
 renderTop(); select(PERSONAS.find(p=>p.id==="camille").id);
