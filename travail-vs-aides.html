@@ -646,6 +646,9 @@ function simulate(h,S){
 
 function metrics(h){
   // Retraité : vie sans carrière (ASPA) contre retraite après une carrière au salaire médian
+  // Handicap empêchant de travailler : niveau de vie avec l'AAH, comparé à une personne valide au SMIC dans le même logement
+  if(h.compareHandicap){ const b=simulate(h,0), f=simulate({...h,id:h.id+"-valide",aah:false,ald:false,compareHandicap:false},P.smicBrut), gain=f.rd-b.rd;
+    return { base:b, full:f, gain, gainH:gain/P.heures, tme:1-gain/f.net1, seuilEq:0, s20:null, remplace:b.aides/P.ratio }; }
   if(h.compareRetraite){ const b=simulate({...h,pension:0},0), f=simulate({...h,pension:h.pensionMed},0), gain=f.rd-b.rd;
     return { base:b, full:f, gain, gainH:gain/P.heures, tme:1-gain/h.pensionMed, seuilEq:0, s20:null, remplace:b.aides/P.ratio }; }
   const F1=refS(h), b=simulate(h.compareCouple?{...h,s2:0}:h,0), f=simulate(h,F1), step=10, max=2.5*fullS(h);
@@ -676,7 +679,7 @@ const PERSONAS = [
   adults:1,age:22,kids:[],majore:false,asf:false,cej:true,zone:2,loyer:430,mode:"tc",km:5,abo:32,repas:50,garde:0,tarifs:15,s2:0},
  {id:"monique",nom:"Monique",tag:"Retraitée, 67 ans",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
   adults:1,age:67,kids:[],majore:false,asf:false,retraite:true,pension:0,zone:3,loyer:420,mode:"pied",km:0,abo:0,repas:0,garde:0,tarifs:15,s2:0},
- {id:"sophie",nom:"Sophie",tag:"Handicap, AAH",desc:"Sophie, 45 ans, vit seule à Toulouse. Atteinte de sclérose en plaques, elle a un taux d'incapacité reconnu de 80 % et touche l'allocation aux adultes handicapés (AAH). Elle pourrait travailler à temps partiel dans une entreprise adaptée à son handicap. À la reprise, son salaire n'est pas compté pendant 6 mois : le calcul montre la situation ensuite.",
+ {id:"sophie",nom:"Sophie",tag:"Handicap, ne peut pas travailler",compareHandicap:true,desc:"Sophie, 45 ans, vit seule à Toulouse. Atteinte d'une sclérose en plaques évoluée, elle a un taux d'incapacité reconnu de 80 % et ne peut pas travailler. Elle vit de l'allocation aux adultes handicapés (AAH, 1 041,59 €) et de la majoration pour la vie autonome. Travailler n'est pas un choix pour elle : on compare donc son niveau de vie à celui d'une personne valide, dans le même logement, qui travaille au SMIC.",
   adults:1,age:45,kids:[],majore:false,asf:false,aah:true,ald:true,zone:2,loyer:480,mode:"tc",km:10,abo:50,repas:50,garde:0,tarifs:20,s2:0},
  {id:"yanis",nom:"Yanis",tag:"Auto-entrepreneur",desc:"Yanis, 31 ans, vit seul à Bordeaux. Il est livreur à vélo en micro-entreprise : pas de salaire, mais un chiffre d'affaires sur lequel il paie 21,3 % de cotisations. Il loue son vélo électrique et paie téléphone, assurance et CFE (environ 120 € par mois). Pas de congés payés, pas de mutuelle d'entreprise, pas de chômage. « Au SMIC » signifie ici un chiffre d'affaires qui lui laisse autant qu'un SMIC net après cotisations, soit environ 1 878 €.",
   adults:1,age:31,kids:[],majore:false,asf:false,ae:true,activite:"services",fraisPro:120,zone:2,loyer:510,mode:"pied",km:0,abo:0,repas:40,garde:0,tarifs:25,s2:0}
@@ -695,7 +698,7 @@ const parJour = (h,v) => v/30/(h.adults+h.kids.length);
 
 function renderTop(){
   const all=PERSONAS.map(p=>({p,m:metrics(p)}));
-  const agg = all.filter(x=>!x.p.compareRetraite && !x.p.refS && !x.p.custom);   // le retraité suit une autre comparaison
+  const agg = all.filter(x=>!x.p.compareRetraite && !x.p.compareHandicap && !x.p.refS && !x.p.custom);   // le retraité suit une autre comparaison
   const avg = agg.reduce((s,x)=>s+kept10(x.m),0)/agg.length;
   const gains = agg.map(x=>x.m.gain);
   // Le repère « salarié typique » est Camille, jamais le profil personnalisé
@@ -712,7 +715,7 @@ function renderTop(){
     <ul class="kh-list">
       <li><b class="k-gain">${sgn(Math.min(...gains))} à ${sgn(Math.max(...gains)).slice(1)}</b><span>par mois au SMIC, selon le foyer : travailler rapporte toujours plus que les aides.</span></li>
       ${ref?`<li><b class="k-work">× ${dec(ref.m.full.rd/ref.m.base.rd)}</b><span>pour un salarié au salaire médian : ${eur(ref.m.full.rd)} par mois, contre ${eur(ref.m.base.rd)} sans emploi.</span></li>`:""}
-      <li><b class="k-aid">${low}</b><span>gagnent le moins : voiture obligatoire, garde d'enfants ou handicap.</span></li>
+      <li><b class="k-aid">${low}</b><span>gagnent le moins : voiture obligatoire et garde d'enfants.</span></li>
     </ul>`;
   const sortedRows=[...all].sort((a,b)=>a.m.gain-b.m.gain);   // du plus petit au plus grand écart
   const rv=sortedRows.map(({p,m})=>[resteAVivre(p,m.base),resteAVivre(p,m.full)]);
@@ -723,8 +726,8 @@ function renderTop(){
   document.getElementById("m-legend").hidden = !all.some(x=>x.p.custom);
   sortedRows.forEach(({p,m},i)=>{ const [r0,r1]=rv[i];
     const b=document.createElement("button"); b.className="row"; b.type="button";
-    const ref=p.custom?(p.compareRetraite?`Retraite de ${eur(p.pensionMed)}`:`${p.ae?"CA":"Salaire"} de ${eur(refS(p))} brut`):p.compareRetraite?"43 ans au salaire médian":p.ae?"CA équivalent au SMIC":p.compareCouple?"Deux salaires médians":p.refS?"Salaire médian":"SMIC temps plein";
-    const vsLab = p.compareRetraite ? "Avec carrière" : "Salarié";
+    const ref=p.custom?(p.compareRetraite?`Retraite de ${eur(p.pensionMed)}`:`${p.ae?"CA":"Salaire"} de ${eur(refS(p))} brut`):p.compareHandicap?"Personne valide au SMIC":p.compareRetraite?"43 ans au salaire médian":p.ae?"CA équivalent au SMIC":p.compareCouple?"Deux salaires médians":p.refS?"Salaire médian":"SMIC temps plein";
+    const vsLab = p.compareRetraite ? "Avec carrière" : p.compareHandicap ? "Comparé à" : "Salarié";
     b.innerHTML=`<div class="name"><div class="nm-top"><b>${p.nom}</b><span class="gap-pill${m.gain<0?" neg":""}">${sgn(m.gain)}<small> /mois</small></span></div><span class="tagline">${p.tag}</span><span class="vs"><i>${vsLab}</i>${ref}${OPTS.mois<12&&!p.compareRetraite?` · ${OPTS.mois} mois/an`:""}</span></div>
       <div class="bars"><span class="glab">Revenu disponible</span>
         <div class="bar"><span style="width:${W(m.base.rd)}%;background:var(--aid)"></span>${eur(m.base.rd)}</div>
@@ -815,7 +818,7 @@ function setSliderMax(){ document.getElementById("sal").max=Math.round(Math.max(
 function select(id){ cur=PERSONAS.find(p=>p.id===id); setSliderMax(); document.getElementById("sal").value=Math.round(refS(cur)/10)*10; renderTabs(); fillForm(); update(); }
 
 function update(){
-  const R=!!cur.compareRetraite;
+  const R=!!(cur.compareRetraite || cur.compareHandicap), HD=!!cur.compareHandicap;
   ["presets"].forEach(id=>document.getElementById(id).hidden=R);
   document.querySelector(".slider").hidden=R; document.querySelector(".chartbox").hidden=R;
   const m=metrics(cur), S=+document.getElementById("sal").value, x=R?m.full:simulate(cur,S), b=m.base;
@@ -828,7 +831,8 @@ function update(){
   if(S===0) txt=`Sans emploi, ${cur.nom} a un revenu disponible de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Choisissez un salaire pour comparer.`;
   else if(d<0) txt=`Avec ce salaire, ${cur.nom} aurait <b class="k-loss">${eur(-d)} de moins</b> qu'en ne travaillant pas : les frais du travail dépassent ce que le salaire rapporte en plus.`;
   else txt=`Sans emploi, ${cur.nom} a un revenu disponible de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Avec ce salaire, <b class="k-work">${eur(x.rd)}</b>. Travailler lui rapporte <b class="k-gain">${eur(d)} de plus</b>, soit <b>${dec(d/netTot*10)} € sur 10 €</b> ${cur.ae?"de revenu après cotisations":"de salaire net"}${heures?`, environ ${dec(d/heures)} € par heure travaillée`:""}.`;
-  if(R) txt=`Sans avoir travaillé, le revenu disponible de ${cur.nom} serait de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Après une carrière au salaire médian, <b class="k-work">${eur(x.rd)}</b>. Quarante-trois ans de travail lui rapportent <b class="k-gain">${eur(x.rd-b.rd)} de plus par mois</b> à la retraite : sur 10 € de pension, elle garde <b>${dec(kept10(m))} €</b> de plus que sans carrière.`;
+  if(HD) txt=`Avec l'AAH, ${cur.nom} a un revenu disponible de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Une personne valide dans le même logement, au SMIC, aurait <b class="k-work">${eur(x.rd)}</b>, soit <b>${eur(x.rd-b.rd)} de plus</b>. L'AAH garantit un revenu proche, sans que ${cur.nom} puisse choisir de travailler pour l'augmenter.`;
+  else if(R) txt=`Sans avoir travaillé, le revenu disponible de ${cur.nom} serait de <b class="k-aid">${eur(b.rd)}</b> par mois, avant loyer et dépenses courantes. Après une carrière au salaire médian, <b class="k-work">${eur(x.rd)}</b>. Quarante-trois ans de travail lui rapportent <b class="k-gain">${eur(x.rd-b.rd)} de plus par mois</b> à la retraite : sur 10 € de pension, elle garde <b>${dec(kept10(m))} €</b> de plus que sans carrière.`;
   if(S>0||R){ const rb=resteAVivre(cur,b), rx=resteAVivre(cur,x); txt+=` Une fois le loyer, les dépenses courantes et l'alimentation payés, le reste à vivre passe de <b class="k-aid">${eur(rb)}</b> à <b class="k-work">${eur(rx)}</b> par mois, soit ${dec(parJour(cur,rb))} € puis ${dec(parJour(cur,rx))} € par jour et par personne.`; }
   if(x.moisTrav) txt+=` <b>Emploi précaire :</b> moyenne sur l'année de ${x.moisTrav} mois de travail, ${dec(x.moisAre)} mois de chômage indemnisé et ${dec(x.moisSans)} mois sans revenu d'activité.`;
   if(cur.custom) txt = txt.replace("Mon profil a un","vous avez un").replace("Mon profil aurait","vous auriez").replace("lui rapporte","vous rapporte").replace("le revenu disponible de Mon profil serait","votre revenu disponible serait").replace("il resterait à Mon profil","il vous resterait").replace("elle garde","vous gardez").replace("lui rapportent","vous rapportent");
@@ -844,9 +848,9 @@ function update(){
   const couts=[[`Transport (${cur.mode==="tc"?"abonnement remboursé à moitié":cur.mode==="pied"?"à pied ou à vélo":(cur.km||0)+" km aller, "+(cur.mode==="va"?"coût complet":"carburant et usure")})`,x=>x.fraisTransport],["Repas au travail",x=>x.fraisRepas],["Frais professionnels",x=>x.fraisPro],["Garde d'enfants",x=>x.fraisGarde],["Mutuelle",x=>x.sante],["Reste à charge santé (franchises, 2 € par consultation)",x=>x.rac],["Dépassements d'honoraires non remboursés",x=>x.dep],["Impôt",x=>x.ir]];
   const show=f=>Math.abs(f(b))>=0.5||Math.abs(f(x))>=0.5;
   const line=(l,f,neg)=>`<tr><td>${l}</td><td class="r">${neg&&f(b)>=0.5?"−":""}${eur(f(b))}</td><td class="r">${neg&&f(x)>=0.5?"−":""}${eur(f(x))}</td></tr>`;
-  let h=`<thead><tr><th></th><th class="r k-aid">${R?"Sans carrière":"Sans emploi"}</th><th class="r k-work">${R?"Carrière au salaire médian":S?eur(S)+(cur.ae?" de CA":" brut"):"—"}</th></tr></thead><tbody>`;
-  h+=`<tr class="grp"><td colspan="3">${R?"Revenus":"Salaire"}</td></tr>`;
-  if(!R) h+=line(cur.ae?"Revenu après cotisations":"Salaire net",x=>x.net1);
+  let h=`<thead><tr><th></th><th class="r k-aid">${HD?"Avec l'AAH":R?"Sans carrière":"Sans emploi"}</th><th class="r k-work">${HD?"Valide, au SMIC":R?"Carrière au salaire médian":S?eur(S)+(cur.ae?" de CA":" brut"):"—"}</th></tr></thead><tbody>`;
+  h+=`<tr class="grp"><td colspan="3">${R&&!HD?"Revenus":"Salaire"}</td></tr>`;
+  if(!R||HD) h+=line(cur.ae?"Revenu après cotisations":"Salaire net",x=>x.net1);
   if(show(x=>x.net2)) h+=line("Salaire du conjoint",x=>x.net2);
   if(show(x=>x.pension)) h+=line("Pension de retraite",x=>x.pension);
   if(show(x=>x.are)) h+=line("Allocation chômage (ARE)",x=>x.are);
