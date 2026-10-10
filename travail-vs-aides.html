@@ -59,13 +59,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .row:hover{background:var(--soft)}
 @media (max-width:700px){.row{grid-template-columns:minmax(0,1fr)}}
 .row .name b{font-family:var(--f-display);font-stretch:88%;font-size:1.08rem}
-.row .name span{display:block;font-size:.85rem;color:var(--muted)}
+.row .name>span{display:block;font-size:.85rem;color:var(--muted)}
 .bars{display:flex;flex-direction:column;gap:5px;min-width:0}
 .opts{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.9rem;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .opts label{display:flex;align-items:center;gap:6px}
 .opts select{font:inherit;font-size:.88rem;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
 .glab{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.row .name span.cmp{font-size:.78rem;margin-top:2px}
+.row .name{display:flex;flex-direction:column;gap:4px}
+.nm-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.row .name .nm-top b{font-family:var(--f-display);font-stretch:88%;font-size:1.12rem}
+.row .name .gap-pill{display:inline-block;font-family:var(--f-mono);font-size:.84rem;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap;color:var(--gain);background:color-mix(in srgb,var(--gain) 15%,transparent)}
+.gap-pill small{font-weight:400;opacity:.8}
+.row .name .gap-pill.neg{color:var(--loss);background:color-mix(in srgb,var(--loss) 15%,transparent)}
+.row .name span.tagline{font-size:.86rem;color:var(--muted)}
+.row .name span.vs{display:flex;align-items:baseline;gap:6px;font-size:.8rem;color:var(--ink)}
+.vs i{font-style:normal;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--work);border:1px solid color-mix(in srgb,var(--work) 45%,transparent);border-radius:4px;padding:0 5px;white-space:nowrap}
 .bar{display:flex;align-items:center;gap:8px;white-space:nowrap;font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums}
 .bar span{display:block;height:14px;border-radius:3px;min-width:2px}
 .res{text-align:right}
@@ -613,9 +621,9 @@ function metrics(h){
 
 <script>
 const PERSONAS = [
- {id:"camille",nom:"Camille",tag:"Salariée typique, salaire médian",refS:2880,desc:"Camille, 38 ans, vit seule et travaille comme technicienne dans une entreprise de taille moyenne. Elle gagne le salaire médian du privé : environ 2 880 € brut, soit 2 190 € net par mois. La moitié des salariés gagnent moins, l'autre moitié plus. Elle loue un T2 à 650 € et va au travail en voiture (15 km), comme la majorité des actifs. C'est le profil de référence : la plupart des Français sont salariés, et payés au-dessus du SMIC.",
+ {id:"camille",nom:"Camille",tag:"Salariée typique",refS:2880,desc:"Camille, 38 ans, vit seule et travaille comme technicienne dans une entreprise de taille moyenne. Elle gagne le salaire médian du privé : environ 2 880 € brut, soit 2 190 € net par mois. La moitié des salariés gagnent moins, l'autre moitié plus. Elle loue un T2 à 650 € et va au travail en voiture (15 km), comme la majorité des actifs. C'est le profil de référence : la plupart des Français sont salariés, et payés au-dessus du SMIC.",
   adults:1,age:38,kids:[],majore:false,asf:false,zone:2,loyer:650,mode:"vp",km:15,abo:0,repas:60,garde:0,tarifs:30,s2:0},
- {id:"bernard",nom:"Famille Bernard",tag:"Couple salarié, 2 enfants, deux salaires médians",refS:2880,compareCouple:true,fraisDouble:true,desc:"Nicolas et Émilie, 40 ans, ont deux enfants de 6 et 10 ans et louent un T4 à 950 € près de Nantes. Tous deux gagnent le salaire médian (environ 2 880 € brut, 2 190 € net chacun). Chacun va au travail en voiture (15 km). Les enfants vont au périscolaire et au centre de loisirs pendant les vacances. On compare avec la situation où aucun des deux ne travaillerait. Le curseur fait varier le salaire de Nicolas, celui d'Émilie restant au salaire médian.",
+ {id:"bernard",nom:"Famille Bernard",tag:"Couple salarié, 2 enfants",refS:2880,compareCouple:true,fraisDouble:true,desc:"Nicolas et Émilie, 40 ans, ont deux enfants de 6 et 10 ans et louent un T4 à 950 € près de Nantes. Tous deux gagnent le salaire médian (environ 2 880 € brut, 2 190 € net chacun). Chacun va au travail en voiture (15 km). Les enfants vont au périscolaire et au centre de loisirs pendant les vacances. On compare avec la situation où aucun des deux ne travaillerait. Le curseur fait varier le salaire de Nicolas, celui d'Émilie restant au salaire médian.",
   adults:2,age:40,kids:[6,10],majore:false,asf:false,zone:2,loyer:950,mode:"vp",km:15,abo:0,repas:60,garde:150,tarifs:60,s2:2880},
  {id:"karim",nom:"Karim",tag:"Seul, sans enfant",desc:"Karim, 30 ans, vit seul dans un T1 du privé en périphérie lyonnaise. Sans emploi, il bénéficie du tarif solidaire des transports en commun.",
   adults:1,age:30,kids:[],majore:false,asf:false,zone:2,loyer:520,mode:"tc",km:8,abo:73,repas:60,garde:0,tarifs:30,s2:0},
@@ -633,7 +641,7 @@ const PERSONAS = [
   adults:2,age:37,kids:[10],majore:false,asf:false,zone:2,loyer:650,mode:"va",km:12,abo:0,repas:60,garde:80,tarifs:20,s2:1867},
  {id:"lucas",nom:"Lucas",tag:"Jeune de 22 ans",desc:"Lucas, 22 ans, a quitté le domicile de ses parents pour un studio à Rennes. Sans enfant, il n'a pas droit au RSA. Il suit un Contrat d'engagement jeune à la Mission locale (15 à 20 heures d'activités par semaine), limité à 12 mois. Décochez le CEJ pour voir sa situation une fois le contrat terminé.",
   adults:1,age:22,kids:[],majore:false,asf:false,cej:true,zone:2,loyer:430,mode:"tc",km:5,abo:32,repas:50,garde:0,tarifs:15,s2:0},
- {id:"monique",nom:"Monique",tag:"Retraitée : aucune carrière ou salaire médian",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
+ {id:"monique",nom:"Monique",tag:"Retraitée, 67 ans",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
   adults:1,age:67,kids:[],majore:false,asf:false,retraite:true,pension:0,zone:3,loyer:420,mode:"pied",km:0,abo:0,repas:0,garde:0,tarifs:15,s2:0},
  {id:"sophie",nom:"Sophie",tag:"Handicap, AAH",desc:"Sophie, 45 ans, vit seule à Toulouse. Atteinte de sclérose en plaques, elle a un taux d'incapacité reconnu de 80 % et touche l'allocation aux adultes handicapés (AAH). Elle pourrait travailler à temps partiel dans une entreprise adaptée à son handicap. À la reprise, son salaire n'est pas compté pendant 6 mois : le calcul montre la situation ensuite.",
   adults:1,age:45,kids:[],majore:false,asf:false,aah:true,ald:true,zone:2,loyer:480,mode:"tc",km:10,abo:50,repas:50,garde:0,tarifs:20,s2:0},
@@ -677,8 +685,9 @@ function renderTop(){
   document.getElementById("m-legend").hidden = !all.some(x=>x.p.custom);
   sortedRows.forEach(({p,m},i)=>{ const [r0,r1]=rv[i];
     const b=document.createElement("button"); b.className="row"; b.type="button";
-    const ref=p.custom?(p.compareRetraite?`retraite de ${eur(p.pensionMed)} net`:`${p.ae?"chiffre d'affaires":"salaire"} de ${eur(refS(p))} brut`):p.compareRetraite?"retraite après une carrière au salaire médian":p.ae?"chiffre d'affaires équivalent au SMIC":p.compareCouple?"deux salaires médians":p.refS?"salaire médian":"SMIC temps plein";
-    b.innerHTML=`<div class="name"><b>${p.nom}</b><span>${p.tag}</span><span class="cmp"><b class="${m.gain<0?"k-loss":"k-gain"}" style="font-family:var(--f-mono);font-size:.8rem">écart ${sgn(m.gain)} / mois</b><br>salarié : ${ref}${OPTS.mois<12&&!p.compareRetraite?` · ${OPTS.mois} mois par an`:""}</span></div>
+    const ref=p.custom?(p.compareRetraite?`Retraite de ${eur(p.pensionMed)}`:`${p.ae?"CA":"Salaire"} de ${eur(refS(p))} brut`):p.compareRetraite?"43 ans au salaire médian":p.ae?"CA équivalent au SMIC":p.compareCouple?"Deux salaires médians":p.refS?"Salaire médian":"SMIC temps plein";
+    const vsLab = p.compareRetraite ? "Avec carrière" : "Salarié";
+    b.innerHTML=`<div class="name"><div class="nm-top"><b>${p.nom}</b><span class="gap-pill${m.gain<0?" neg":""}">${sgn(m.gain)}<small> /mois</small></span></div><span class="tagline">${p.tag}</span><span class="vs"><i>${vsLab}</i>${ref}${OPTS.mois<12&&!p.compareRetraite?` · ${OPTS.mois} mois/an`:""}</span></div>
       <div class="bars"><span class="glab">Revenu disponible</span>
         <div class="bar"><span style="width:${W(m.base.rd)}%;background:var(--aid)"></span>${eur(m.base.rd)}</div>
         <div class="bar"><span style="width:${W(m.full.rd)}%;background:var(--work)"></span>${eur(m.full.rd)}</div>
