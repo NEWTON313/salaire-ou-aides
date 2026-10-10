@@ -168,6 +168,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .crumbs a{font-weight:600;text-decoration:none}
 .crumbs a:hover{text-decoration:underline}
 #page-detail section{margin-top:22px}
+.share-cta{display:flex;flex-wrap:wrap;gap:10px}
+.cta.ghost{background:transparent;color:var(--work);border:1px solid var(--work);text-decoration:none}
+a.cta{text-decoration:none;display:inline-block}
 .share{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .share-url{flex:1 1 260px;min-width:0;font:inherit;font-size:.85rem;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}
 .tab{font:inherit;font-size:.92rem;padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
@@ -320,6 +323,18 @@ ul.lim{padding-left:1.1rem;color:var(--muted);margin:0} ul.lim li{margin:.3rem 0
     </div>
   </section>
   <nav class="crumbs"><a href="#comparaison">← Retour à la comparaison</a></nav>
+ </div>
+
+ <div id="page-share" hidden>
+  <section>
+    <a class="brand" href="#accueil" aria-label="salaire-ou-aides.fr, accueil"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><rect x="15" y="30" width="13" height="20" rx="3" fill="var(--aid)"/><rect x="36" y="14" width="13" height="36" rx="3" fill="var(--work)"/></svg><span>salaire-ou-aides.fr</span></a>
+    <p class="eyebrow">Simulation partagée</p>
+    <h2>Ce que rapporte le travail dans cette situation</h2>
+    <p class="muted" id="share-desc"></p>
+    <div class="legend"><span><i style="background:var(--aid)"></i>Sans emploi</span><span><i style="background:var(--work)"></i>Salarié</span></div>
+    <div class="rows" id="share-row"></div>
+    <div class="share-cta"><a class="cta" href="#mon-profil">Faire ma propre simulation</a><a class="cta ghost" href="#foyer-perso">Voir le détail</a><a class="cta ghost" href="#comparaison">Voir les 10 foyers types</a></div>
+  </section>
  </div>
 
  <div id="page-more">
@@ -766,6 +781,7 @@ function renderTop(){
   const W=v=>Math.max(0,v)/max*62;
   const rows=document.getElementById("rows"); rows.innerHTML="";
   const mres=document.getElementById("m-result"); mres.innerHTML=""; mres.hidden=true;
+  const srow=document.getElementById("share-row"); srow.innerHTML="";
   document.getElementById("m-legend").hidden = !all.some(x=>x.p.custom);
   sortedRows.forEach(({p,m},i)=>{ const [r0,r1]=rv[i];
     const b=document.createElement("button"); b.className="row"; b.type="button";
@@ -784,7 +800,9 @@ function renderTop(){
     if(p.custom) b.style.boxShadow="inset 4px 0 0 var(--work)";
     b.onclick=()=>goFoyer(p.id);
     rows.appendChild(b);
-    if(p.custom){ const c=b.cloneNode(true); c.onclick=b.onclick; c.style.boxShadow="none"; mres.appendChild(c); mres.hidden=false; }
+    if(p.custom){ const c=b.cloneNode(true); c.onclick=b.onclick; c.style.boxShadow="none"; mres.appendChild(c); mres.hidden=false;
+      const d=b.cloneNode(true); d.onclick=b.onclick; d.style.boxShadow="none"; d.style.background="none"; d.querySelector(".nm-top b").textContent="Cette situation"; const tl=d.querySelector(".tagline"); if(tl) tl.remove(); srow.appendChild(d);
+      document.getElementById("share-desc").textContent=p.desc; }
     document.querySelector("#mon-profil [data-share]").hidden = !(LIVE_OF && all.some(x=>x.p.custom));
   });
 }
@@ -1057,13 +1075,17 @@ document.querySelectorAll("[data-share-btn]").forEach(b=>b.addEventListener("cli
 function route(){
   const raw = location.hash.slice(1);
   if(raw.startsWith("profil-")){   // lien partagé : recrée le profil sans écraser celui du visiteur
-    if(decodeProfil(raw.slice(7))){ addMonProfil(readMonProfil(), false, false); history.replaceState(null,"","#foyer-perso"); }
+    if(decodeProfil(raw.slice(7))){ addMonProfil(readMonProfil(), false, false); history.replaceState(null,"","#partage"); }
     else history.replaceState(null,"",location.pathname);
   }
   const h = location.hash.slice(1), detail = h.startsWith("foyer-") && PERSONAS.some(p=>p.id===h.slice(6));
-  document.getElementById("page-home").hidden = detail;
-  document.getElementById("page-more").hidden = detail;
+  const sharePage = h==="partage" && PERSONAS.some(p=>p.id==="perso");
+  document.getElementById("page-home").hidden = detail || sharePage;
+  document.getElementById("page-more").hidden = detail || sharePage;
   document.getElementById("page-detail").hidden = !detail;
+  document.getElementById("page-share").hidden = !sharePage;
+  if(sharePage){ window.scrollTo(0,0); document.title="Simulation partagée · Ce que rapporte vraiment le travail";
+    gaEvent("page_view",{page_title:document.title, page_location:location.href}); return; }
   if(detail){ if(!cur || cur.id!==h.slice(6)) select(h.slice(6)); window.scrollTo(0,0);
     document.title = `${cur.nom} : en détail · Ce que rapporte vraiment le travail`; }
   else { document.title = "Ce que rapporte vraiment le travail"; const t=document.getElementById(h); if(t) setTimeout(()=>t.scrollIntoView(),0); }
