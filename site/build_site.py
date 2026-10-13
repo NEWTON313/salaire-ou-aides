@@ -10,12 +10,18 @@ Usage : python site/build_site.py
 import io
 import json
 import pathlib
+import subprocess
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from seo_data import FAQ  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 URL = "https://salaire-ou-aides.fr/"
-TITLE = "Ce que rapporte vraiment le travail"
-DESC = ("Vivre des aides ou travailler : le calcul foyer par foyer, une fois tout compté "
-        "(aides, impôt, santé, transport, garde, loyer). Simulateur pédagogique, barèmes 2026, calculs OpenFisca.")
+TITLE = "Ce que rapporte vraiment le travail"   # titre de la page source (claude.ai)
+PAGE_TITLE = "RSA ou travailler ? Ce que rapporte vraiment le travail · Simulateur 2026"
+DESC = ("RSA, prime d'activité, APL ou salaire : combien rapporte vraiment le travail ? Simulateur gratuit 2026, "
+        "foyer par foyer et pour votre situation, une fois l'impôt, la santé, le transport, la garde et le loyer comptés. Calculs OpenFisca.")
 
 src = io.open(ROOT / "travail-vs-aides.html", encoding="utf-8").read()
 
@@ -48,12 +54,15 @@ ld = {
     "license": "https://salaire-ou-aides.fr/LICENSE.txt",
 }
 
+faq_ld = {"@context": "https://schema.org", "@type": "FAQPage",
+          "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]}
+
 head = f"""<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{TITLE}</title>
+<title>{PAGE_TITLE}</title>
 <meta name="description" content="{DESC}">
 <link rel="canonical" href="{URL}">
 <meta name="theme-color" content="#0e1321" media="(prefers-color-scheme: dark)">
@@ -64,7 +73,7 @@ head = f"""<!doctype html>
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:site_name" content="salaire-ou-aides.fr">
-<meta property="og:title" content="{TITLE}">
+<meta property="og:title" content="{PAGE_TITLE}">
 <meta property="og:description" content="{DESC}">
 <meta property="og:url" content="{URL}">
 <meta property="og:image" content="{URL}og.png">
@@ -72,13 +81,14 @@ head = f"""<!doctype html>
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Ce que rapporte vraiment le travail : 3,4 € restent en plus sur 10 € de salaire au SMIC.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{TITLE}">
+<meta name="twitter:title" content="{PAGE_TITLE}">
 <meta name="twitter:description" content="{DESC}">
 <meta name="twitter:image" content="{URL}og.png">
 <link rel="preload" href="/fonts/archivo-latin-b92029.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/source-sans-3-latin-263ee0.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
+<script type="application/ld+json">{json.dumps(faq_ld, ensure_ascii=False)}</script>
 <style>:root{{color-scheme:light dark}}body{{margin:0}}img{{max-width:100%}}</style>
 </head>
 <body>
@@ -87,3 +97,6 @@ out = head + body + "\n</body>\n</html>\n"
 dest = ROOT / "site" / "index.html"
 io.open(dest, "w", encoding="utf-8").write(out)
 print("écrit :", dest, f"({len(out)//1024} Ko)")
+
+# Pages indexables par situation et sitemap
+subprocess.run([sys.executable, str(ROOT / "site" / "build_pages.py")], check=True)

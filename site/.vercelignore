@@ -1,5 +1,9 @@
 .env*
 build_site.py
+build_pages.py
 make_images.py
+compute.js
+seo_data.py
+__pycache__
 README.md
 .vercel
