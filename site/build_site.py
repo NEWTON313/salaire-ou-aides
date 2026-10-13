@@ -65,6 +65,7 @@ head = f"""<!doctype html>
 <title>{PAGE_TITLE}</title>
 <meta name="description" content="{DESC}">
 <link rel="canonical" href="{URL}">
+<meta name="msvalidate.01" content="08F66ED9D295972312D7D6B4152F5DA7">
 <meta name="theme-color" content="#0e1321" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f3f5f9" media="(prefers-color-scheme: light)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
