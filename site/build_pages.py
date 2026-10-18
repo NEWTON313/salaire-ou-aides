@@ -57,7 +57,7 @@ def page(d, slug, others):
     h1 = H1[d["id"]]
     gain = d["gain"]
     perday0 = d["rav0"] / 30 / d["persons"]; perday1 = d["rav1"] / 30 / d["persons"]
-    desc = (f"{l0} : {eur(d['base']['rd'])} par mois ; {l1.lower()} : {eur(d['full']['rd'])}, soit {'+' if gain>=0 else '−'}{eur(abs(gain))}. "
+    desc = (f"{l0} : {eur(d['base']['rd'])} par mois ; {l1} : {eur(d['full']['rd'])}, soit {'+' if gain>=0 else '−'}{eur(abs(gain))}. "
             f"Reste à vivre de {eur(d['rav0'])} à {eur(d['rav1'])}. Calcul détaillé 2026 (aides, impôt, frais) avec OpenFisca.")
     title = f"{h1} (2026)"
     mx = max(d["base"]["rd"], d["full"]["rd"], 1)
