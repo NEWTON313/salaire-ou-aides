@@ -229,6 +229,7 @@ details.faq>p{padding:0 16px 14px;color:var(--muted);max-width:75ch}
 svg text{font-family:var(--f-mono);font-size:11px}
 .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
 @media (max-width:760px){.split{grid-template-columns:minmax(0,1fr)}}
+.split:has(> .chartbox[hidden]){grid-template-columns:minmax(0,1fr);max-width:720px;width:100%;margin-inline:auto}
 .tbl{width:100%;border-collapse:collapse;font-size:.93rem}
 .tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .tbl th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
