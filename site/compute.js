@@ -19,6 +19,8 @@ const out = new Function(model + `
       base:pick(m.base), full:pick(m.full), gain:r(m.gain), kept10:Math.max(0,(1-m.tme)*10),
       rav0:r(rav(h,m.base)), rav1:r(rav(h,m.full)),
       grid: h.ae ? [500,800,1000,1200,1500,1800,2000,2500,3000].map(S => { const x = simulate(h,S);
-        return {ca:S, net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), rd:r(x.rd)}; }) : null}; });
+        return {ca:S, net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), rd:r(x.rd)}; })
+        : h.id==="karim" ? [0.25,0.5,0.75,1,1.25,1.5,2].map(k => { const S=k*P.smicBrut, x = simulate(h,S);
+        return {k, brut:r(S), net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), ir:r(x.ir), frais:r(x.fraisTrajet), rd:r(x.rd)}; }) : null}; });
 `)();
 process.stdout.write(JSON.stringify(out));

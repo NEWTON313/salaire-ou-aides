@@ -19,7 +19,7 @@ from seo_data import PAGES  # noqa: E402
 URL = "https://salaire-ou-aides.fr"
 IDS = ["karim", "sandrine", "diallo", "gerard", "lucas", "yanis", "sophie", "monique", "camille", "bernard"]
 H1 = {
-    "karim": "RSA ou SMIC pour une personne seule : ce que rapporte vraiment le travail",
+    "karim": "RSA ou SMIC en 2026 : combien gagne-t-on vraiment en travaillant ?",
     "sandrine": "Mère seule avec 2 enfants : RSA ou travailler, que rapporte un emploi ?",
     "diallo": "Famille de 4 enfants : vivre des aides ou travailler au SMIC ?",
     "gerard": "Travailler en zone rurale avec une voiture : est-ce rentable ?",
@@ -98,6 +98,56 @@ def ae_block(d):
           "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
     return body, ld
 
+FRAC = {0.25: "¼ SMIC", 0.5: "½ SMIC", 0.75: "¾ SMIC", 1: "SMIC", 1.25: "1,25 SMIC", 1.5: "1,5 SMIC", 2: "2 SMIC"}
+
+def rsa_block(d):
+    """Contenu propre à la page RSA ou SMIC : barème selon le salaire, explication de l'écart et questions fréquentes."""
+    g = {r["k"]: r for r in d["grid"]}
+    b, f = d["base"], d["full"]
+    kept = f"{d['kept10']:.1f}".replace(".", ",")
+    sans = {"k": 0, "net": 0, "rsa": b["rsa"], "pa": b["pa"], "apl": b["apl"], "rd": b["rd"]}
+    rows = "\n".join(f"<tr><td>{eur(r['net'])} <span class=\"sub\">{FRAC.get(r['k'], 'sans emploi')}</span></td><td>{eur(r['rsa'])}</td>"
+                     f"<td>{eur(r['pa'])}</td><td>{eur(r['apl'])}</td><td><b>{eur(r['rd'])}</b></td></tr>" for r in [sans] + d["grid"])
+    faq = [
+        ("Combien touche-t-on au RSA en 2026 ?",
+         "Pour une personne seule sans enfant, le montant forfaitaire du RSA est de 651,69 € par mois. Si elle reçoit une aide au logement, "
+         f"la CAF retire un forfait logement de 78,20 € : il reste environ {eur(b['rsa'])} versés, auxquels s'ajoute l'aide au logement ({eur(b['apl'])} ici)."),
+        ("Quelle est la différence entre le RSA et le SMIC ?",
+         f"Pour une personne seule locataire (loyer de {eur(d['loyer'])}), le revenu disponible passe de {eur(b['rd'])} sans emploi à {eur(f['rd'])} au SMIC à temps plein, "
+         f"soit {eur(d['gain'])} de plus par mois, une fois le transport et la mutuelle payés. L'écart est plus faible que la différence entre le SMIC net (1 478 €) et le RSA, "
+         "car l'aide au logement baisse et la prime d'activité ne compense qu'une partie du RSA perdu."),
+        ("Peut-on toucher le RSA en travaillant ?",
+         f"Oui, avec un petit salaire. Avec un quart de SMIC ({eur(g[0.25]['net'])} net), le RSA versé tombe à environ {eur(g[0.25]['rsa'])}, "
+         f"et une prime d'activité de {eur(g[0.25]['pa'])} s'ajoute. Le RSA s'arrête quand le salaire net dépasse le RSA dû ; la prime d'activité prend alors le relais."),
+        ("Jusqu'à quel salaire touche-t-on la prime d'activité ?",
+         f"Pour une personne seule, la prime d'activité baisse au-dessus du SMIC : environ {eur(g[1.25]['pa'])} à 1,25 SMIC, puis plus rien à 1,5 SMIC "
+         f"({eur(g[1.5]['net'])} net par mois) dans cet exemple."),
+    ]
+    body = f"""
+<h2>RSA, prime d'activité et aide au logement selon le salaire</h2>
+<p>Personne seule sans enfant, locataire à {eur(d['loyer'])} par mois, transport en commun. Montants mensuels 2026, calculés avec OpenFisca.</p>
+<div class="scroll"><table class="grid">
+<thead><tr><th>Salaire net</th><th>RSA</th><th>Prime d'activité</th><th>Aide au loge&shy;ment</th><th>Revenu dispo&shy;nible</th></tr></thead>
+<tbody>
+{rows}
+</tbody></table></div>
+<p class="leg">Revenu disponible : salaire et aides, moins l'impôt, la mutuelle, les franchises médicales et le transport. Le SMIC 2026 est de 1 867,02 € brut, soit 1 477,93 € net par mois à temps plein.</p>
+
+<h2>Pourquoi l'écart entre RSA et SMIC est plus faible qu'on le croit</h2>
+<ul>
+<li><b>Le RSA disparaît</b> : {eur(b['rsa'])} par mois sans emploi, plus rien au SMIC.</li>
+<li><b>L'aide au logement {"disparaît" if not f['apl'] else "baisse"}</b> : {eur(b['apl'])} sans emploi, {eur(f['apl'])} au SMIC.</li>
+<li><b>La prime d'activité compense une partie</b> : {eur(f['pa'])} par mois au SMIC.</li>
+<li><b>Travailler coûte</b> : transport ({eur(f['frais'])}) et santé ({eur(f['sante'])}), alors que la complémentaire santé solidaire est gratuite au RSA.</li>
+</ul>
+<p>Résultat : sur 10 € de salaire, il reste environ <b>{kept} €</b> de plus à la fin du mois. Travailler rapporte toujours davantage, mais beaucoup moins que l'écart affiché entre le SMIC et le RSA.</p>
+
+<h2>Questions fréquentes</h2>
+""" + "\n".join(f"<h3>{html.escape(q)}</h3>\n<p>{html.escape(a)}</p>" for q, a in faq)
+    ld = {"@context": "https://schema.org", "@type": "FAQPage",
+          "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
+    return body, ld
+
 def page(d, slug, others):
     l0, l1 = labels(d)
     h1 = H1[d["id"]]
@@ -116,7 +166,7 @@ def page(d, slug, others):
           {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
               {"@type": "ListItem", "position": 1, "name": "Simulateur", "item": URL + "/"},
               {"@type": "ListItem", "position": 2, "name": h1, "item": f"{URL}/foyers/{slug}/"}]}]
-    extra, extra_ld = ae_block(d) if d.get("grid") else ("", None)
+    extra, extra_ld = (ae_block(d) if d["ae"] else rsa_block(d)) if d.get("grid") else ("", None)
     if extra_ld: ld.append(extra_ld)
     kept = f"{d['kept10']:.1f}".replace(".", ",")
     verdict = (f"Travailler rapporte <b>{eur(gain)} de plus par mois</b>. Sur 10 € de revenu d'activité, il reste environ <b>{kept} €</b> en plus, "
@@ -168,8 +218,8 @@ th,td{{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}}
 td:nth-child(n+2),th:nth-child(n+2){{text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap}}
 tr.tot td{{font-weight:700}}
 .scroll{{overflow-x:auto}}
-table.grid{{font-size:.88rem}} table.grid th{{white-space:normal;vertical-align:bottom}} table.grid th,table.grid td{{padding:7px 8px}}
-@media (max-width:600px){{table.grid{{font-size:.78rem}} table.grid th,table.grid td{{padding:6px 5px}}}}
+table.grid{{font-size:.88rem}} .sub{{font-size:.75em;color:var(--muted)}} table.grid th{{white-space:normal;vertical-align:bottom}} table.grid th,table.grid td{{padding:7px 8px}}
+@media (max-width:600px){{table.grid .sub{{display:block}} table.grid{{font-size:.78rem}} table.grid th,table.grid td{{padding:6px 5px}}}}
 .cta{{display:inline-block;margin:6px 8px 0 0;padding:10px 18px;border-radius:8px;background:var(--work);color:var(--surface);font-weight:700;text-decoration:none}}
 .cta.ghost{{background:transparent;color:var(--work);border:1px solid var(--work)}}
 ul.others{{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}}
