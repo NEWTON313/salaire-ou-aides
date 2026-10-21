@@ -38,17 +38,17 @@
 /* Layout : une réponse, une comparaison en barres, un foyer en détail, puis annexes repliées */
 :root{
   --paper:#f3f5f9; --surface:#ffffff; --ink:#161e36; --muted:#56617c; --line:#d8deea;
-  --work:#2547a6; --aid:#c27510; --loss:#b03636; --gain:#1d7650; --soft:#e9eef8;
+  --work:#2547a6; --aid:#c27510; --aid-ink:#8f5508; --loss:#b03636; --gain:#1d7650; --soft:#e9eef8;
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#0e1321; --surface:#161d30; --ink:#e6eaf4; --muted:#98a3bd; --line:#29324d;
-  --work:#86a2ff; --aid:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}}
+  --work:#86a2ff; --aid:#eaa845; --aid-ink:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0e1321; --surface:#161d30; --ink:#e6eaf4; --muted:#98a3bd; --line:#29324d;
-  --work:#86a2ff; --aid:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}
+  --work:#86a2ff; --aid:#eaa845; --aid-ink:#eaa845; --loss:#ef8080; --gain:#5ccb9b; --soft:#1d2640; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
@@ -61,7 +61,7 @@ p{margin:0}
 .eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}
 section{margin-top:52px;display:flex;flex-direction:column;gap:14px}
-.k-work{color:var(--work)} .k-aid{color:var(--aid)} .k-gain{color:var(--gain)} .k-loss{color:var(--loss)}
+.k-work{color:var(--work)} .k-aid{color:var(--aid-ink)} .k-gain{color:var(--gain)} .k-loss{color:var(--loss)}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 a{color:var(--work)}
 button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--work);outline-offset:2px}
@@ -136,15 +136,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .sc b{display:block;font-family:var(--f-display);font-stretch:90%;font-size:1.02rem}
 .sc span:not(.sc-ico){font-size:.88rem;color:var(--muted)}
 .sc-ico{flex:0 0 28px;height:28px;border-radius:7px;display:grid;place-items:center;font:700 .85rem var(--f-mono);color:var(--surface)}
-.sc-aid .sc-ico{background:var(--aid)} .sc-work .sc-ico{background:var(--work)}
+.sc-aid .sc-ico{background:var(--aid-ink)} .sc-work .sc-ico{background:var(--work)}
 .bar i.bl{font-style:normal;font-family:var(--f-body);font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;flex:0 0 3.9em}
-.bar i.bl-aid{color:var(--aid)} .bar i.bl-work{color:var(--work)}
+.bar i.bl-aid{color:var(--aid-ink)} .bar i.bl-work{color:var(--work)}
 .duo{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:stretch}
 @media (max-width:700px){.duo{grid-template-columns:minmax(0,1fr);gap:8px}.duo .duo-gap{flex-direction:row;gap:8px;padding:2px 0}.duo .duo-gap small{max-width:none}}
 .duo-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
 .duo-card.aid{border-top:5px solid var(--aid)} .duo-card.work{border-top:5px solid var(--work)}
 .duo-tag{font:600 .72rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase}
-.duo-card.aid .duo-tag{color:var(--aid)} .duo-card.work .duo-tag{color:var(--work)}
+.duo-card.aid .duo-tag{color:var(--aid-ink)} .duo-card.work .duo-tag{color:var(--work)}
 .duo-num{font-family:var(--f-display);font-stretch:85%;font-weight:800;font-size:2rem;line-height:1}
 .duo-sub{font-size:.8rem;color:var(--muted)}
 .duo-card ul{list-style:none;margin:4px 0 0;padding:0;font-size:.88rem;display:flex;flex-direction:column;gap:2px}
@@ -1031,7 +1031,7 @@ function update(){
     + `<div class="duo-gap"><b class="${x.rd-b.rd<0?"k-loss":"k-gain"}">${sgn(x.rd-b.rd)}</b><small>par mois ${R&&!HD?"avec la carrière":HD?"pour la personne valide":"avec l'emploi"}</small></div>`
     + card("work", tagB, x, true);
 
-  let h=`<thead><tr><th></th><th class="r"><span class="th-chip" style="background:var(--aid)">${labA}</span></th><th class="r"><span class="th-chip" style="background:var(--work)">${labB}</span></th></tr></thead><tbody>`;
+  let h=`<thead><tr><th></th><th class="r"><span class="th-chip" style="background:var(--aid-ink)">${labA}</span></th><th class="r"><span class="th-chip" style="background:var(--work)">${labB}</span></th></tr></thead><tbody>`;
   h+=`<tr class="grp"><td colspan="3">${R&&!HD?"Revenus":"Revenus du travail"}</td></tr>`;
   if(!R||HD) h+=line(cur.ae?"Revenu après cotisations":"Salaire net",x=>x.net1);
   if(show(x=>x.net2)) h+=line("Salaire du conjoint",x=>x.net2);
