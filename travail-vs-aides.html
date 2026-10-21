@@ -122,7 +122,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .duo-gap{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8px 6px;min-width:120px}
 .duo-gap b{font-family:var(--f-display);font-stretch:85%;font-size:1.6rem}
 .duo-gap small{font-size:.78rem;color:var(--muted);max-width:12ch}
-.th-chip{display:inline-block;padding:2px 8px;border-radius:99px;color:var(--surface);font-size:.7rem}
+.th-chip{display:inline-block;padding:2px 8px;border-radius:99px;color:var(--surface);font-size:.7rem;white-space:nowrap}
+.th-chip .sh{display:none}
+@media (max-width:640px){.th-chip .lg{display:none}.th-chip .sh{display:inline}}
 .glab{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .row .name{display:flex;flex-direction:column;gap:4px}
 .nm-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -998,7 +1000,7 @@ function update(){
     + `<div class="duo-gap"><b class="${x.rd-b.rd<0?"k-loss":"k-gain"}">${sgn(x.rd-b.rd)}</b><small>par mois ${R&&!HD?"avec la carrière":HD?"pour la personne valide":"avec l'emploi"}</small></div>`
     + card("work", tagB, x, true);
 
-  let h=`<thead><tr><th></th><th class="r"><span class="th-chip" style="background:var(--aid-ink)">${labA}</span></th><th class="r"><span class="th-chip" style="background:var(--work)">${labB}</span></th></tr></thead><tbody>`;
+  let h=`<thead><tr><th></th><th class="r"><span class="th-chip" style="background:var(--aid-ink)"><span class="lg">${labA}</span><span class="sh">${HD?"AAH":"Sans"}</span></span></th><th class="r"><span class="th-chip" style="background:var(--work)"><span class="lg">${labB}</span><span class="sh">${HD?"Valide":"Avec"}</span></span></th></tr></thead><tbody>`;
   h+=`<tr class="grp"><td colspan="3">${R&&!HD?"Revenus":"Revenus du travail"}</td></tr>`;
   if(!R||HD) h+=line(cur.ae?"Revenu après cotisations":"Salaire net",x=>x.net1);
   if(show(x=>x.net2)) h+=line("Salaire du conjoint",x=>x.net2);
