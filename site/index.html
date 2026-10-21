@@ -650,7 +650,7 @@ function noel(persons){ return [0,152.45,228.68,274.41,320.15][Math.min(persons,
 // Cotisations = taux × CA ; CAF et impôts retiennent CA − abattement forfaitaire.
 const AE = {services:{taux:0.213,abatt:0.50}, vente:{taux:0.124,abatt:0.71}, liberal:{taux:0.263,abatt:0.34}};
 function fullS(h){ return h.ae ? P.smicNet/(1-AE[h.activite].taux) : P.smicBrut; }
-// Salaire de comparaison : SMIC (ou équivalent), sauf profil de référence au salaire médian (≈ 2 880 € brut, 2 190 € net)
+// Salaire de comparaison : SMIC (ou équivalent), sauf profil de référence au salaire médian (≈ 2 880 € brut, 2 280 € net)
 const MEDIAN_BRUT = 2880;
 function refS(h){ return h.refS || fullS(h); }
 
@@ -773,7 +773,7 @@ function simCore(h,S,are=0){
 
   // Majoration pour la vie autonome : AAH sans salaire et avec aide au logement
   if(h.aah && aah>0 && S===0 && aplV>0) mva=104.77;
-  if(ofr && h.aah) mva=ofv("mva");
+  if(ofr && h.aah) mva=S>0?0:ofv("mva");   // la majoration pour la vie autonome suppose de ne percevoir aucun revenu d'activité
   const crous = h.etudiant ? (h.bourseCrous||0)/12 : 0;   // bourse CROUS (10 mensualités), ramenée au mois, non réduite par un job
   const aides = crous+aah+mva+aspa+cej+rsa+pa+aplV+af+cf+asf+ab+ars/12+bourses+noelM+energie+tarifs+alim;
   const rd = revPro+pension+are+aides-ir-sante-rac-dep-fraisTrajet-fraisGarde;
@@ -812,9 +812,9 @@ function metrics(h){
 
 <script>
 const PERSONAS = [
- {id:"camille",nom:"Camille",tag:"Salariée typique",refS:2880,desc:"Camille, 38 ans, vit seule et travaille comme technicienne dans une entreprise de taille moyenne. Elle gagne le salaire médian du privé : environ 2 880 € brut, soit 2 190 € net par mois. La moitié des salariés gagnent moins, l'autre moitié plus. Elle loue un T2 à 650 € et va au travail en voiture (15 km), comme la majorité des actifs. C'est le profil de référence : la plupart des Français sont salariés, et payés au-dessus du SMIC.",
+ {id:"camille",nom:"Camille",tag:"Salariée typique",refS:2880,desc:"Camille, 38 ans, vit seule et travaille comme technicienne dans une entreprise de taille moyenne. Elle gagne le salaire médian du privé : environ 2 880 € brut, soit 2 280 € net par mois. La moitié des salariés gagnent moins, l'autre moitié plus. Elle loue un T2 à 650 € et va au travail en voiture (15 km), comme la majorité des actifs. C'est le profil de référence : la plupart des Français sont salariés, et payés au-dessus du SMIC.",
   adults:1,age:38,kids:[],majore:false,asf:false,zone:2,loyer:650,mode:"vp",km:15,abo:0,repas:60,garde:0,tarifs:30,s2:0},
- {id:"bernard",nom:"Famille Bernard",tag:"Couple salarié, 2 enfants",refS:2880,compareCouple:true,fraisDouble:true,desc:"Nicolas et Émilie, 40 ans, ont deux enfants de 6 et 10 ans et louent un T4 à 950 € près de Nantes. Tous deux gagnent le salaire médian (environ 2 880 € brut, 2 190 € net chacun). Chacun va au travail en voiture (15 km). Les enfants vont au périscolaire et au centre de loisirs pendant les vacances. On compare avec la situation où aucun des deux ne travaillerait. Le curseur fait varier le salaire de Nicolas, celui d'Émilie restant au salaire médian.",
+ {id:"bernard",nom:"Famille Bernard",tag:"Couple salarié, 2 enfants",refS:2880,compareCouple:true,fraisDouble:true,desc:"Nicolas et Émilie, 40 ans, ont deux enfants de 6 et 10 ans et louent un T4 à 950 € près de Nantes. Tous deux gagnent le salaire médian (environ 2 880 € brut, 2 280 € net chacun). Chacun va au travail en voiture (15 km). Les enfants vont au périscolaire et au centre de loisirs pendant les vacances. On compare avec la situation où aucun des deux ne travaillerait. Le curseur fait varier le salaire de Nicolas, celui d'Émilie restant au salaire médian.",
   adults:2,age:40,kids:[6,10],majore:false,asf:false,zone:2,loyer:950,mode:"vp",km:15,abo:0,repas:60,garde:150,tarifs:60,s2:2880},
  {id:"karim",nom:"Karim",tag:"Seul, sans enfant",desc:"Karim, 30 ans, vit seul dans un T1 du privé en périphérie lyonnaise. Sans emploi, il bénéficie du tarif solidaire des transports en commun.",
   adults:1,age:30,kids:[],majore:false,asf:false,zone:2,loyer:520,mode:"tc",km:8,abo:73,repas:60,garde:0,tarifs:30,s2:0},
@@ -826,7 +826,7 @@ const PERSONAS = [
   adults:1,age:57,kids:[],majore:false,asf:false,zone:3,loyer:380,mode:"va",km:20,abo:0,repas:70,garde:0,tarifs:10,s2:0},
  {id:"lucas",nom:"Lucas",tag:"Jeune de 22 ans",desc:"Lucas, 22 ans, a quitté le domicile de ses parents pour un studio à Rennes. Sans enfant, il n'a pas droit au RSA. Il suit un Contrat d'engagement jeune à la Mission locale (15 à 20 heures d'activités par semaine), limité à 12 mois. Décochez le CEJ pour voir sa situation une fois le contrat terminé.",
   adults:1,age:22,kids:[],majore:false,asf:false,cej:true,zone:2,loyer:430,mode:"tc",km:5,abo:32,repas:50,garde:0,tarifs:15,s2:0},
- {id:"monique",nom:"Monique",tag:"Retraitée, 67 ans",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 190 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
+ {id:"monique",nom:"Monique",tag:"Retraitée, 67 ans",compareRetraite:true,pensionMed:1600,desc:"Monique, 67 ans, vit seule dans une petite ville et loue un appartement à 420 €. On compare deux vies possibles. Dans la première, elle n'a jamais travaillé : elle n'a droit à aucune retraite et touche le minimum vieillesse (ASPA). Dans la seconde, elle a travaillé 43 ans au salaire médian (environ 2 280 € net par mois) : sa retraite est d'environ 1 600 € net. À la retraite, il n'y a plus de mutuelle d'entreprise : une mutuelle senior coûte environ 100 € par mois.",
   adults:1,age:67,kids:[],majore:false,asf:false,retraite:true,pension:0,zone:3,loyer:420,mode:"pied",km:0,abo:0,repas:0,garde:0,tarifs:15,s2:0},
  {id:"sophie",nom:"Sophie",tag:"Handicap, ne peut pas travailler",compareHandicap:true,desc:"Sophie, 45 ans, vit seule à Toulouse. Atteinte d'une sclérose en plaques évoluée, elle a un taux d'incapacité reconnu de 80 % et ne peut pas travailler. Elle vit de l'allocation aux adultes handicapés (AAH, 1 041,59 €) et de la majoration pour la vie autonome. Travailler n'est pas un choix pour elle : on compare donc son niveau de vie à celui d'une personne valide, dans le même logement, qui travaille au SMIC.",
   adults:1,age:45,kids:[],majore:false,asf:false,aah:true,ald:true,zone:2,loyer:480,mode:"tc",km:10,abo:50,repas:50,garde:0,tarifs:20,s2:0},

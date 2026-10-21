@@ -15,20 +15,21 @@ from datetime import date
 SITE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE))
 from seo_data import PAGES  # noqa: E402
+import page_content  # noqa: E402
 
 URL = "https://salaire-ou-aides.fr"
 IDS = ["karim", "sandrine", "diallo", "gerard", "lucas", "yanis", "sophie", "monique", "camille", "bernard"]
 H1 = {
     "karim": "RSA ou SMIC en 2026 : combien gagne-t-on vraiment en travaillant ?",
-    "sandrine": "Mère seule avec 2 enfants : RSA ou travailler, que rapporte un emploi ?",
-    "diallo": "Famille de 4 enfants : vivre des aides ou travailler au SMIC ?",
-    "gerard": "Travailler en zone rurale avec une voiture : est-ce rentable ?",
-    "lucas": "Moins de 25 ans sans RSA : que rapporte un emploi au SMIC ?",
+    "sandrine": "Mère seule avec 2 enfants : RSA ou travailler ? Le calcul 2026",
+    "diallo": "Famille de 4 enfants : allocations, RSA ou salaire ? Le calcul 2026",
+    "gerard": "Travailler avec une voiture en zone rurale : est-ce rentable en 2026 ?",
+    "lucas": "Moins de 25 ans sans RSA : CEJ, prime d'activité ou emploi en 2026 ?",
     "yanis": "Prime d'activité auto-entrepreneur 2026 : montant, RSA et revenu réel",
-    "sophie": "AAH : quel niveau de vie face à un salarié au SMIC ?",
-    "monique": "Retraite : minimum vieillesse ou carrière au salaire médian ?",
-    "camille": "Salaire médian : combien de plus qu'en vivant des aides ?",
-    "bernard": "Couple avec deux salaires médians et 2 enfants : l'écart avec les aides",
+    "sophie": "AAH 2026 : montant, cumul avec un salaire et niveau de vie",
+    "monique": "Minimum vieillesse (ASPA) 2026 ou retraite d'une carrière : l'écart réel",
+    "camille": "Salaire médian 2026 : combien de plus qu'en vivant des aides ?",
+    "bernard": "Couple, deux salaires médians et 2 enfants : l'écart avec les aides en 2026",
 }
 
 def eur(v):
@@ -39,7 +40,7 @@ def labels(d):
     if d["handicap"]: return "Avec l'AAH (ne peut pas travailler)", "Personne valide au SMIC"
     if d["ae"]: return "Sans activité (RSA)", "Auto-entrepreneur, CA équivalent au SMIC"
     if d["id"] == "bernard": return "Aucun des deux ne travaille", "Deux salaires médians"
-    if d["id"] == "camille": return "Sans emploi", "Au salaire médian (2 190 € net)"
+    if d["id"] == "camille": return "Sans emploi", "Au salaire médian (2 280 € net)"
     return "Sans emploi", "Salarié au SMIC temps plein"
 
 def lines(d):
@@ -166,7 +167,7 @@ def page(d, slug, others):
           {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
               {"@type": "ListItem", "position": 1, "name": "Simulateur", "item": URL + "/"},
               {"@type": "ListItem", "position": 2, "name": h1, "item": f"{URL}/foyers/{slug}/"}]}]
-    extra, extra_ld = (ae_block(d) if d["ae"] else rsa_block(d)) if d.get("grid") else ("", None)
+    extra, extra_ld = ae_block(d) if d["ae"] else rsa_block(d) if d["id"] == "karim" else page_content.block(d)
     if extra_ld: ld.append(extra_ld)
     kept = f"{d['kept10']:.1f}".replace(".", ",")
     verdict = (f"Travailler rapporte <b>{eur(gain)} de plus par mois</b>. Sur 10 € de revenu d'activité, il reste environ <b>{kept} €</b> en plus, "
@@ -219,7 +220,7 @@ td:nth-child(n+2),th:nth-child(n+2){{text-align:right;font-family:"IBM Plex Mono
 tr.tot td{{font-weight:700}}
 .scroll{{overflow-x:auto}}
 table.grid{{font-size:.88rem}} .sub{{font-size:.75em;color:var(--muted)}} table.grid th{{white-space:normal;vertical-align:bottom}} table.grid th,table.grid td{{padding:7px 8px}}
-@media (max-width:600px){{table.grid .sub{{display:block}} table.grid{{font-size:.78rem}} table.grid th,table.grid td{{padding:6px 5px}}}}
+@media (max-width:600px){{table.grid .sub{{display:block}} table.grid{{font-size:.76rem}} table.grid th,table.grid td{{padding:6px 4px}}}}
 .cta{{display:inline-block;margin:6px 8px 0 0;padding:10px 18px;border-radius:8px;background:var(--work);color:var(--surface);font-weight:700;text-decoration:none}}
 .cta.ghost{{background:transparent;color:var(--work);border:1px solid var(--work)}}
 ul.others{{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}}

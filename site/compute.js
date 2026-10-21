@@ -20,7 +20,10 @@ const out = new Function(model + `
       rav0:r(rav(h,m.base)), rav1:r(rav(h,m.full)),
       grid: h.ae ? [500,800,1000,1200,1500,1800,2000,2500,3000].map(S => { const x = simulate(h,S);
         return {ca:S, net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), rd:r(x.rd)}; })
-        : h.id==="karim" ? [0.25,0.5,0.75,1,1.25,1.5,2].map(k => { const S=k*P.smicBrut, x = simulate(h,S);
-        return {k, brut:r(S), net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), ir:r(x.ir), frais:r(x.fraisTrajet), rd:r(x.rd)}; }) : null}; });
+        : h.compareRetraite ? null
+        : (h.refS ? [0,0.5,1,h.refS/P.smicBrut,2,2.5] : [0.25,0.5,0.75,1,1.25,1.5,2]).map(k => { const S=k*P.smicBrut, x = simulate(h,S);
+        return {k:Math.round(k*1000)/1000, brut:r(S), net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), fam:r(x.af+x.cf+x.ab+x.asf),
+          aah:r((x.aah||0)+(x.mva||0)), cej:r(x.cej||0), ir:r(x.ir), frais:r(x.fraisTrajet+x.fraisGarde), rd:r(x.rd)}; }),
+      apresCej: h.cej ? pick(simulate({...h, cej:false}, 0)) : null}; });
 `)();
 process.stdout.write(JSON.stringify(out));
