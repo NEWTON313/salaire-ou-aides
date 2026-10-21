@@ -24,7 +24,7 @@ H1 = {
     "diallo": "Famille de 4 enfants : vivre des aides ou travailler au SMIC ?",
     "gerard": "Travailler en zone rurale avec une voiture : est-ce rentable ?",
     "lucas": "Moins de 25 ans sans RSA : que rapporte un emploi au SMIC ?",
-    "yanis": "Auto-entrepreneur : RSA, prime d'activité et revenu réel",
+    "yanis": "Prime d'activité auto-entrepreneur 2026 : montant, RSA et revenu réel",
     "sophie": "AAH : quel niveau de vie face à un salarié au SMIC ?",
     "monique": "Retraite : minimum vieillesse ou carrière au salaire médian ?",
     "camille": "Salaire médian : combien de plus qu'en vivant des aides ?",
@@ -52,6 +52,52 @@ def lines(d):
             ("Santé (mutuelle, franchises)", -b["sante"], -f["sante"]), ("Impôt sur le revenu", -b["ir"], -f["ir"])]
     return [r for r in rows if r[1] or r[2]]
 
+AE_FAQ = [
+    ("Un auto-entrepreneur a-t-il droit à la prime d'activité ?",
+     "Oui. La prime d'activité est ouverte aux micro-entrepreneurs comme aux salariés, sous condition de ressources du foyer. "
+     "La CAF ne retient pas tout le chiffre d'affaires : elle applique d'abord l'abattement forfaitaire du régime micro "
+     "(50 % pour les prestations de services commerciales ou artisanales, 71 % pour la vente, 34 % pour les activités libérales)."),
+    ("Quel chiffre d'affaires déclarer à la CAF ?",
+     "Le chiffre d'affaires encaissé chaque mois du trimestre écoulé, avant cotisations, dans la déclaration trimestrielle de ressources. "
+     "L'abattement forfaitaire est appliqué ensuite pour calculer les revenus retenus. Les cotisations versées à l'Urssaf ne sont pas déduites en plus."),
+    ("Peut-on toucher le RSA et la prime d'activité en auto-entrepreneur ?",
+     "Oui, quand le chiffre d'affaires est faible. Dans l'exemple de cette page (personne seule, services, loyer de 510 €), "
+     "avec 800 € de chiffre d'affaires par mois, le RSA versé est d'environ {rsa800} et la prime d'activité d'environ {pa800}."),
+    ("Combien de prime d'activité pour 1 500 € de chiffre d'affaires par mois ?",
+     "Environ {pa1500} par mois pour une personne seule en prestations de services, sans autre revenu. "
+     "Comme seule la moitié du chiffre d'affaires compte, la prime reste versée jusqu'à un chiffre d'affaires élevé : encore {pa3000} pour 3 000 € par mois."),
+]
+
+def ae_block(d):
+    """Contenu propre à l'auto-entrepreneur : barème selon le chiffre d'affaires, règles CAF et questions fréquentes."""
+    g = {r["ca"]: r for r in d["grid"]}
+    rows = "\n".join(f"<tr><td>{eur(r['ca'])}</td><td><b>{eur(r['pa'])}</b></td><td>{eur(r['rsa'])}</td><td>{eur(r['apl'])}</td><td>{eur(r['rd'])}</td></tr>" for r in d["grid"])
+    vals = dict(rsa800=eur(g[800]["rsa"]), pa800=eur(g[800]["pa"]), pa1500=eur(g[1500]["pa"]), pa3000=eur(g[3000]["pa"]))
+    faq = [(q, a.format(**vals)) for q, a in AE_FAQ]
+    body = f"""
+<h2>Prime d'activité et RSA selon le chiffre d'affaires</h2>
+<p>Personne seule en prestations de services (livraison, petits travaux…), loyer de {eur(d['loyer'])} à Bordeaux, sans autre revenu. Montants mensuels 2026, calculés avec OpenFisca.</p>
+<div class="scroll"><table class="grid">
+<thead><tr><th>Chiffre d'affaires</th><th>Prime d'activité</th><th>RSA</th><th>Aide au loge&shy;ment</th><th>Revenu dispo&shy;nible</th></tr></thead>
+<tbody>
+{rows}
+</tbody></table></div>
+<p class="leg">Montants par mois. Revenu disponible : chiffre d'affaires moins 21,3 % de cotisations, plus les aides, moins les frais professionnels (vélo, téléphone, assurance, CFE), la santé et l'impôt. Sans activité, il est de {eur(d['base']['rd'])}.</p>
+
+<h2>Comment la CAF calcule la prime d'activité d'un auto-entrepreneur</h2>
+<ul>
+<li><b>Le chiffre d'affaires moins un abattement forfaitaire</b> : 50 % pour les services, 71 % pour la vente, 34 % pour les activités libérales. Avec 1 500 € de chiffre d'affaires en services, la CAF retient 750 € de revenus.</li>
+<li><b>Les cotisations ne sont pas déduites en plus</b> : avec 21,3 % de cotisations sur les services, il reste 78,7 % du chiffre d'affaires, alors que la CAF n'en retient que 50 %. À revenu réellement perçu égal, la prime est donc souvent plus élevée que pour un salarié.</li>
+<li><b>Une déclaration tous les trois mois</b> : le chiffre d'affaires de chaque mois du trimestre écoulé sert à calculer la prime des trois mois suivants. Un trimestre creux augmente la prime suivante, un bon trimestre la réduit.</li>
+<li><b>Le RSA utilise la même base</b> : à faible chiffre d'affaires, RSA et prime d'activité se cumulent ; dans cet exemple, le RSA s'arrête entre 1 000 € et 1 200 € de chiffre d'affaires par mois.</li>
+</ul>
+
+<h2>Questions fréquentes</h2>
+""" + "\n".join(f"<h3>{html.escape(q)}</h3>\n<p>{html.escape(a)}</p>" for q, a in faq)
+    ld = {"@context": "https://schema.org", "@type": "FAQPage",
+          "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
+    return body, ld
+
 def page(d, slug, others):
     l0, l1 = labels(d)
     h1 = H1[d["id"]]
@@ -59,7 +105,7 @@ def page(d, slug, others):
     perday0 = d["rav0"] / 30 / d["persons"]; perday1 = d["rav1"] / 30 / d["persons"]
     desc = (f"{l0} : {eur(d['base']['rd'])} par mois ; {l1} : {eur(d['full']['rd'])}, soit {'+' if gain>=0 else '−'}{eur(abs(gain))}. "
             f"Reste à vivre de {eur(d['rav0'])} à {eur(d['rav1'])}. Calcul détaillé 2026 (aides, impôt, frais) avec OpenFisca.")
-    title = f"{h1} (2026)"
+    title = h1 if "2026" in h1 else f"{h1} (2026)"
     mx = max(d["base"]["rd"], d["full"]["rd"], 1)
     w = lambda v: max(0, v) / mx * 100
     table = "\n".join(f"<tr><td>{html.escape(n)}</td><td>{eur(a)}</td><td>{eur(c)}</td></tr>" for n, a, c in lines(d))
@@ -70,6 +116,8 @@ def page(d, slug, others):
           {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
               {"@type": "ListItem", "position": 1, "name": "Simulateur", "item": URL + "/"},
               {"@type": "ListItem", "position": 2, "name": h1, "item": f"{URL}/foyers/{slug}/"}]}]
+    extra, extra_ld = ae_block(d) if d.get("grid") else ("", None)
+    if extra_ld: ld.append(extra_ld)
     kept = f"{d['kept10']:.1f}".replace(".", ",")
     verdict = (f"Travailler rapporte <b>{eur(gain)} de plus par mois</b>. Sur 10 € de revenu d'activité, il reste environ <b>{kept} €</b> en plus, "
                f"le reste compensant les aides qui baissent et les frais du travail." if not (d["retraite"] or d["handicap"]) else
@@ -104,6 +152,7 @@ a{{color:var(--work)}}
 .brand{{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 1.05rem "Archivo","Arial Narrow",sans-serif;font-stretch:90%}}
 .crumbs{{font-size:.85rem;color:var(--muted);margin:14px 0 8px}}
 h1{{font:800 clamp(1.8rem,4.6vw,2.6rem)/1.1 "Archivo","Arial Narrow",sans-serif;font-stretch:85%;margin:0 0 12px;text-wrap:balance}}
+h3{{font:700 1.05rem/1.3 "Archivo","Arial Narrow",sans-serif;margin:20px 0 4px}}
 h2{{font:750 1.35rem/1.2 "Archivo","Arial Narrow",sans-serif;font-stretch:85%;margin:34px 0 10px}}
 .lead{{color:var(--muted);max-width:68ch}}
 .verdict{{margin:18px 0;padding:16px 18px;border-left:4px solid var(--work);background:var(--surface);border-radius:0 10px 10px 0}}
@@ -119,6 +168,8 @@ th,td{{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}}
 td:nth-child(n+2),th:nth-child(n+2){{text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap}}
 tr.tot td{{font-weight:700}}
 .scroll{{overflow-x:auto}}
+table.grid{{font-size:.88rem}} table.grid th{{white-space:normal;vertical-align:bottom}} table.grid th,table.grid td{{padding:7px 8px}}
+@media (max-width:600px){{table.grid{{font-size:.78rem}} table.grid th,table.grid td{{padding:6px 5px}}}}
 .cta{{display:inline-block;margin:6px 8px 0 0;padding:10px 18px;border-radius:8px;background:var(--work);color:var(--surface);font-weight:700;text-decoration:none}}
 .cta.ghost{{background:transparent;color:var(--work);border:1px solid var(--work)}}
 ul.others{{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}}
@@ -156,6 +207,7 @@ ul.others a{{display:inline-block;padding:6px 12px;border:1px solid var(--line);
 <tr class="tot"><td>Reste à vivre</td><td>{eur(d['rav0'])}</td><td>{eur(d['rav1'])}</td></tr>
 </tbody></table></div>
 
+{extra}
 <h2>Simuler votre propre situation</h2>
 <p>Changez le salaire, le loyer, le transport ou la composition du foyer dans le simulateur : les aides et l'impôt sont recalculés avec OpenFisca.</p>
 <a class="cta" href="/#mon-profil">Faire ma simulation</a><a class="cta ghost" href="/#foyer-{d['id']}">Ouvrir ce foyer dans le simulateur</a>

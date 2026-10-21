@@ -17,6 +17,8 @@ const out = new Function(model + `
     return {id:h.id, nom:h.nom, tag:h.tag, desc:h.desc, loyer:h.loyer, persons:h.adults+h.kids.length,
       retraite:!!h.compareRetraite, handicap:!!h.compareHandicap, refS:h.refS||0, ae:!!h.ae,
       base:pick(m.base), full:pick(m.full), gain:r(m.gain), kept10:Math.max(0,(1-m.tme)*10),
-      rav0:r(rav(h,m.base)), rav1:r(rav(h,m.full))}; });
+      rav0:r(rav(h,m.base)), rav1:r(rav(h,m.full)),
+      grid: h.ae ? [500,800,1000,1200,1500,1800,2000,2500,3000].map(S => { const x = simulate(h,S);
+        return {ca:S, net:r(x.net1), rsa:r(x.rsa), pa:r(x.pa), apl:r(x.apl), rd:r(x.rd)}; }) : null}; });
 `)();
 process.stdout.write(JSON.stringify(out));

@@ -1017,7 +1017,7 @@ function update(){
   const labA = HD?"Avec l'AAH":R?"Sans carrière":"Sans emploi";
   const labB = HD?"Valide, au SMIC":R?"Carrière au salaire médian":S?(cur.ae?"Avec activité":"Avec emploi"):"Avec emploi";
   const tagA = HD?"Ne peut pas travailler · AAH":R?"Retraite sans carrière · minimum vieillesse":"Sans emploi · vit des aides";
-  const tagB = HD?"Personne valide au SMIC":R?"Retraite après 43 ans au salaire médian":S?`${cur.ae?"Chiffre d'affaires":"Salaire"} de ${eur(S)} brut`:"Choisissez un salaire";
+  const tagB = HD?"Personne valide au SMIC":R?"Retraite après 43 ans au salaire médian":S?(cur.ae?`Chiffre d'affaires de ${eur(S)}`:`Salaire de ${eur(S)} brut`):"Choisissez un salaire";
   const items = (x, withWork) => {
     const src = [[cur.ae?"Revenu d'activité net":"Salaire net",x.net1],["Salaire du conjoint",x.net2],["Retraite",x.pension]].filter(()=>withWork)
       .concat(aides.map(([l,f])=>[l,f(x)]));

@@ -28,6 +28,7 @@ a{color:var(--work)}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font:700 1.05rem "Archivo","Arial Narrow",sans-serif;font-stretch:90%}
 .crumbs{font-size:.85rem;color:var(--muted);margin:14px 0 8px}
 h1{font:800 clamp(1.8rem,4.6vw,2.6rem)/1.1 "Archivo","Arial Narrow",sans-serif;font-stretch:85%;margin:0 0 12px;text-wrap:balance}
+h3{font:700 1.05rem/1.3 "Archivo","Arial Narrow",sans-serif;margin:20px 0 4px}
 h2{font:750 1.35rem/1.2 "Archivo","Arial Narrow",sans-serif;font-stretch:85%;margin:34px 0 10px}
 .lead{color:var(--muted);max-width:68ch}
 .verdict{margin:18px 0;padding:16px 18px;border-left:4px solid var(--work);background:var(--surface);border-radius:0 10px 10px 0}
@@ -43,6 +44,8 @@ th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
 td:nth-child(n+2),th:nth-child(n+2){text-align:right;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
 tr.tot td{font-weight:700}
 .scroll{overflow-x:auto}
+table.grid{font-size:.88rem} table.grid th{white-space:normal;vertical-align:bottom} table.grid th,table.grid td{padding:7px 8px}
+@media (max-width:600px){table.grid{font-size:.78rem} table.grid th,table.grid td{padding:6px 5px}}
 .cta{display:inline-block;margin:6px 8px 0 0;padding:10px 18px;border-radius:8px;background:var(--work);color:var(--surface);font-weight:700;text-decoration:none}
 .cta.ghost{background:transparent;color:var(--work);border:1px solid var(--work)}
 ul.others{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:8px}
@@ -84,6 +87,7 @@ ul.others a{display:inline-block;padding:6px 12px;border:1px solid var(--line);b
 <tr class="tot"><td>Revenu disponible</td><td>972 €</td><td>1 909 €</td></tr>
 <tr class="tot"><td>Reste à vivre</td><td>-98 €</td><td>839 €</td></tr>
 </tbody></table></div>
+
 
 <h2>Simuler votre propre situation</h2>
 <p>Changez le salaire, le loyer, le transport ou la composition du foyer dans le simulateur : les aides et l'impôt sont recalculés avec OpenFisca.</p>
