@@ -91,6 +91,7 @@ head = f"""<!doctype html>
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
 <script type="application/ld+json">{json.dumps(faq_ld, ensure_ascii=False)}</script>
 <style>:root{{color-scheme:light dark}}body{{margin:0}}img{{max-width:100%}}</style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 """
