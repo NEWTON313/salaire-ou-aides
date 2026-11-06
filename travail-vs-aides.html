@@ -86,7 +86,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:.9rem;color:var(--muted)}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
 .rows{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.row{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:center;padding:14px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.row{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;padding:14px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
 .row:first-child{border-top:0}
 .row:hover{background:var(--soft)}
 @media (max-width:700px){.row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px;padding:14px}.row .name{grid-column:1/-1}}
@@ -96,6 +96,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .opts{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.9rem;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .opts label{display:flex;align-items:center;gap:6px}
 .opts select{font:inherit;font-size:.88rem;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink)}
+.compo{display:block;margin-top:4px;font-size:.74rem;color:var(--muted);line-height:1.35}
+.compo b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
 .scenarios{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
 @media (max-width:640px){.scenarios{grid-template-columns:minmax(0,1fr)}}
 .sc{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
@@ -845,10 +847,14 @@ function renderTop(){
     const b=document.createElement("button"); b.className="row"; b.type="button";
     const ref=p.custom?(p.compareRetraite?`Retraite de ${eur(p.pensionMed)}`:`${p.ae?"CA":"Salaire"} de ${eur(refS(p))} brut`):p.compareHandicap?"Personne valide au SMIC":p.compareRetraite?"43 ans au salaire médian":p.ae?"CA équivalent au SMIC":p.compareCouple?"Deux salaires médians":p.refS?"Salaire médian":"SMIC temps plein";
     const vsLab = p.compareRetraite ? "Avec carrière" : p.compareHandicap ? "Comparé à" : "Salarié";
+    // Composition du revenu disponible avec emploi : revenu du travail (ou retraite) + aides − frais, santé et impôt
+    const f=m.full, trav=f.net1+(f.net2||0)+(f.pension||0), frais=trav+f.aides-f.rd;
+    const compo=`dont ${p.compareRetraite?"retraite":p.ae?"revenu d'activité":(f.net2?"salaires nets":"salaire net")} <b>${eur(trav)}</b> + aides <b>${eur(f.aides)}</b>${frais>=1?` − frais, santé, impôt <b>${eur(frais)}</b>`:""}`;
     b.innerHTML=`<div class="name"><div class="nm-top"><b>${p.nom}</b><span class="gap-pill${m.gain<0?" neg":""}">${sgn(m.gain)}<small> /mois</small></span></div><span class="tagline">${p.tag}</span><span class="vs"><i>${vsLab}</i>${ref}${OPTS.mois<12&&!p.compareRetraite?` · ${OPTS.mois} mois/an`:""}</span></div>
       <div class="bars"><span class="glab">Revenu disponible</span>
         <div class="bar"><i class="bl bl-aid">${p.compareHandicap?"AAH":"Aides"}</i><span style="width:${W(m.base.rd)}%;background:var(--aid)"></span>${eur(m.base.rd)}</div>
         <div class="bar"><i class="bl bl-work">${p.compareHandicap?"Valide":p.compareRetraite?"Retraite":"Emploi"}</i><span style="width:${W(m.full.rd)}%;background:var(--work)"></span>${eur(m.full.rd)}</div>
+        <span class="compo">${compo}</span>
       </div>
       <div class="bars"><span class="glab">Reste à vivre</span>
         <div class="bar"><i class="bl bl-aid">${p.compareHandicap?"AAH":"Aides"}</i><span style="width:${W(r0)}%;background:var(--aid)"></span><em style="font-style:normal" class="${r0<0?"k-loss":""}">${eur(r0)}</em></div>
